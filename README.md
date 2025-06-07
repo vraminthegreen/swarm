@@ -1,6 +1,6 @@
 # Swarm Simulation
 
-This repository contains a simple Python program that simulates a swarm of red dots on a black background. The user can place a single flag by clicking the mouse, and the dots will attempt to move toward that flag. Only one red dot can occupy a pixel at any time. Dots may move diagonally and occasionally move randomly to create a more natural swarm effect.
+This repository contains a simple Python program that simulates two swarms of ants competing over flags. Red ants are controlled by the player while blue ants follow an AI-controlled flag. When a swarm member spots an enemy within range it will attack instead of moving. Attacks have a small chance to remove the target, introducing a basic combat element.
 
 ## Requirements
 
@@ -28,3 +28,9 @@ Execute the simulation using the provided helper script:
 Click anywhere in the window to place the target flag for the swarm. The
 simulation updates about 10 times per second and displays a small flag
 instead of a green square.
+
+## Gameplay
+
+Each ant attacks the closest enemy within `ATTACK_RANGE` pixels (default `7`).
+An attack kills the target with probability defined by `KILL_PROBABILITY`
+(default `0.1`). Defeated ants are removed from the simulation.
