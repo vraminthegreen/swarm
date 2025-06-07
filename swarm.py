@@ -5,25 +5,34 @@ import sys
 import random
 
 WIDTH, HEIGHT = 640, 480
-NUM_DOTS = 200
-DOT_COLOR = (255, 0, 0)  # red
+NUM_ANTS = 200
+ANT_COLOR = (255, 0, 0)  # red ants
 BACKGROUND_COLOR = (0, 0, 0)  # black
 FLAG_COLOR = (0, 255, 0)  # green
 FLAG_POLE_COLOR = (200, 200, 200)
 DOT_SIZE = 2
+MIN_DISTANCE = 5  # minimum distance between ants in pixels
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-# Initialize dots at random positions
-dots = []
+# Initialize ants at random positions
+ants = []
 occupied = set()
-while len(dots) < NUM_DOTS:
+def is_valid_position(x, y, others):
+    if not (0 <= x < WIDTH and 0 <= y < HEIGHT):
+        return False
+    for ox, oy in others:
+        if (x - ox) ** 2 + (y - oy) ** 2 < MIN_DISTANCE ** 2:
+            return False
+    return True
+
+while len(ants) < NUM_ANTS:
     x = random.randint(0, WIDTH - 1)
     y = random.randint(0, HEIGHT - 1)
-    if (x, y) not in occupied:
-        dots.append([x, y])
+    if is_valid_position(x, y, occupied):
+        ants.append([x, y])
         occupied.add((x, y))
 
 flag_pos = None
@@ -36,10 +45,10 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             flag_pos = event.pos
 
-    # Update dots toward the flag
+    # Update ants toward the flag
     if flag_pos is not None:
         new_occupied = set()
-        for i, (x, y) in enumerate(dots):
+        for i, (x, y) in enumerate(ants):
             dx = 0 if flag_pos[0] == x else (1 if flag_pos[0] > x else -1)
             dy = 0 if flag_pos[1] == y else (1 if flag_pos[1] > y else -1)
 
@@ -49,16 +58,20 @@ while running:
                 dy = random.choice([-1, 0, 1])
 
             nx, ny = x + dx, y + dy
-            # Ensure only one dot per pixel and stay on screen
-            if (
-                (nx, ny) not in new_occupied
-                and 0 <= nx < WIDTH
-                and 0 <= ny < HEIGHT
-            ):
-                dots[i] = [nx, ny]
-                new_occupied.add((nx, ny))
-            else:
-                new_occupied.add((x, y))
+            # Ensure ants keep minimum distance from each other
+            if not is_valid_position(nx, ny, new_occupied):
+                if is_valid_position(x, y, new_occupied):
+                    nx, ny = x, y
+                else:
+                    for _ in range(100):
+                        rx = random.randint(0, WIDTH - 1)
+                        ry = random.randint(0, HEIGHT - 1)
+                        if is_valid_position(rx, ry, new_occupied):
+                            nx, ny = rx, ry
+                            break
+
+            ants[i] = [nx, ny]
+            new_occupied.add((nx, ny))
         occupied = new_occupied
 
     screen.fill(BACKGROUND_COLOR)
@@ -72,8 +85,8 @@ while running:
             (pole_top[0], pole_top[1] + 6),
         ]
         pygame.draw.polygon(screen, FLAG_COLOR, flag_points)
-    for x, y in dots:
-        pygame.draw.rect(screen, DOT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
+    for x, y in ants:
+        pygame.draw.rect(screen, ANT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
     pygame.display.flip()
     clock.tick(10)
 
