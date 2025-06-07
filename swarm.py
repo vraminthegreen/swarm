@@ -4,13 +4,20 @@ import pygame
 import sys
 import random
 import math
+import time
 
 WIDTH, HEIGHT = 640, 480
 NUM_ANTS = 200
-ANT_COLOR = (255, 0, 0)  # red ants
-BACKGROUND_COLOR = (0, 0, 0)  # black
-FLAG_COLOR = (0, 255, 0)  # green
+NUM_ANTS_BLUE = 200
+
+ANT_COLOR_RED = (255, 0, 0)
+ANT_COLOR_BLUE = (0, 0, 255)
+
+BACKGROUND_COLOR = (0, 0, 0)
+FLAG_COLOR_RED = (255, 100, 100)  # light red
+FLAG_COLOR_BLUE = (0, 0, 255)
 FLAG_POLE_COLOR = (200, 200, 200)
+FLAG_SIZE = 12  # twice the original size
 DOT_SIZE = 2
 MIN_DISTANCE = 5  # minimum distance between ants in pixels
 
@@ -18,8 +25,9 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-# Initialize ants at random positions (floating point coordinates)
-ants = []
+# Initialize ants for both players at random positions
+ants_red = []
+ants_blue = []
 occupied = set()
 def is_valid_position(x, y, others):
     if not (0 <= x < WIDTH and 0 <= y < HEIGHT):
@@ -68,14 +76,23 @@ def compute_move_vector(x, y, flag_pos, others):
     return vx / vlen, vy / vlen
 
 
-while len(ants) < NUM_ANTS:
+while len(ants_red) < NUM_ANTS:
     x = random.uniform(0, WIDTH)
     y = random.uniform(0, HEIGHT)
     if is_valid_position(x, y, occupied):
-        ants.append([x, y])
+        ants_red.append([x, y])
         occupied.add((x, y))
 
-flag_pos = None
+while len(ants_blue) < NUM_ANTS_BLUE:
+    x = random.uniform(0, WIDTH)
+    y = random.uniform(0, HEIGHT)
+    if is_valid_position(x, y, occupied):
+        ants_blue.append([x, y])
+        occupied.add((x, y))
+
+flag_pos_red = None
+flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
+next_flag_move = time.time() + random.uniform(5, 30)
 
 running = True
 while running:
@@ -83,40 +100,84 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            flag_pos = event.pos
+            flag_pos_red = event.pos
 
-    # Update ants toward the flag
-    if flag_pos is not None:
-        proposed = []
-        for x, y in ants:
-            vx, vy = compute_move_vector(x, y, flag_pos, ants)
-            nx = x + vx
-            ny = y + vy
-            nx = max(0, min(WIDTH - 1, nx))
-            ny = max(0, min(HEIGHT - 1, ny))
-            proposed.append((nx, ny))
+    # move the computer-controlled flag occasionally
+    now = time.time()
+    if now >= next_flag_move:
+        flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
+        next_flag_move = now + random.uniform(5, 30)
 
-        new_positions = []
-        for i, (nx, ny) in enumerate(proposed):
-            if is_valid_position(nx, ny, new_positions):
-                new_positions.append((nx, ny))
-            else:
-                new_positions.append(tuple(ants[i]))
-        ants = [list(p) for p in new_positions]
+    all_ants = ants_red + ants_blue
+
+    if flag_pos_red is not None:
+        proposed_red = []
+        for x, y in ants_red:
+            vx, vy = compute_move_vector(x, y, flag_pos_red, all_ants)
+            nx = max(0, min(WIDTH - 1, x + vx))
+            ny = max(0, min(HEIGHT - 1, y + vy))
+            proposed_red.append((nx, ny))
+    else:
+        proposed_red = [tuple(a) for a in ants_red]
+
+    proposed_blue = []
+    for x, y in ants_blue:
+        vx, vy = compute_move_vector(x, y, flag_pos_blue, all_ants)
+        nx = max(0, min(WIDTH - 1, x + vx))
+        ny = max(0, min(HEIGHT - 1, y + vy))
+        proposed_blue.append((nx, ny))
+
+    new_ants_red = []
+    new_ants_blue = []
+    occupied_new = []
+
+    for i, (nx, ny) in enumerate(proposed_red):
+        if is_valid_position(nx, ny, occupied_new):
+            new_ants_red.append((nx, ny))
+            occupied_new.append((nx, ny))
+        else:
+            new_ants_red.append(tuple(ants_red[i]))
+            occupied_new.append(tuple(ants_red[i]))
+
+    for i, (nx, ny) in enumerate(proposed_blue):
+        if is_valid_position(nx, ny, occupied_new):
+            new_ants_blue.append((nx, ny))
+            occupied_new.append((nx, ny))
+        else:
+            new_ants_blue.append(tuple(ants_blue[i]))
+            occupied_new.append(tuple(ants_blue[i]))
+
+    ants_red = [list(p) for p in new_ants_red]
+    ants_blue = [list(p) for p in new_ants_blue]
 
     screen.fill(BACKGROUND_COLOR)
-    for x, y in ants:
-        pygame.draw.rect(screen, ANT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
-    if flag_pos is not None:
-        fx, fy = flag_pos
+    for x, y in ants_red:
+        pygame.draw.rect(screen, ANT_COLOR_RED, (x, y, DOT_SIZE, DOT_SIZE))
+    for x, y in ants_blue:
+        pygame.draw.rect(screen, ANT_COLOR_BLUE, (x, y, DOT_SIZE, DOT_SIZE))
+
+    if flag_pos_red is not None:
+        fx, fy = flag_pos_red
         pole_top = (fx, max(0, fy - 10))
-        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos, pole_top)
+        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos_red, pole_top)
         flag_points = [
             pole_top,
-            (pole_top[0] + 6, pole_top[1] + 3),
-            (pole_top[0], pole_top[1] + 6),
+            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
+            (pole_top[0], pole_top[1] + FLAG_SIZE),
         ]
-        pygame.draw.polygon(screen, FLAG_COLOR, flag_points)
+        pygame.draw.polygon(screen, FLAG_COLOR_RED, flag_points)
+
+    if flag_pos_blue is not None:
+        fx, fy = flag_pos_blue
+        pole_top = (fx, max(0, fy - 10))
+        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos_blue, pole_top)
+        flag_points = [
+            pole_top,
+            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
+            (pole_top[0], pole_top[1] + FLAG_SIZE),
+        ]
+        pygame.draw.polygon(screen, FLAG_COLOR_BLUE, flag_points)
+
     pygame.display.flip()
     clock.tick(10)
 
