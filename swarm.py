@@ -26,6 +26,7 @@ KILL_PROBABILITY = 0.1  # chance that an attack kills the target
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
+font = pygame.font.Font(None, 24)
 
 # Initialize ants for both players at random positions
 ants_red = []
@@ -224,6 +225,11 @@ while running:
             (pole_top[0], pole_top[1] + FLAG_SIZE),
         ]
         pygame.draw.polygon(screen, FLAG_COLOR_BLUE, flag_points)
+
+    # Display remaining ant counts in the top-right corner
+    count_text = font.render(f"Red: {len(ants_red)}  Blue: {len(ants_blue)}", True, (255, 255, 255))
+    text_rect = count_text.get_rect(topright=(WIDTH - 5, 5))
+    screen.blit(count_text, text_rect)
 
     pygame.display.flip()
     clock.tick(20)
