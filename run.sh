@@ -8,13 +8,14 @@ if ! command -v pyenv >/dev/null; then
   exit 1
 fi
 
-# Initialize pyenv in this shell
+# Initialize pyenv and pyenv-virtualenv in this shell
 export PYENV_ROOT="$(pyenv root)"
-if [ -f "$PYENV_ROOT"/../libexec/pyenv ]; then
-  eval "$(pyenv init -)"
-  if command -v pyenv-virtualenv-init >/dev/null; then
-    eval "$(pyenv virtualenv-init -)"
-  fi
+eval "$(pyenv init -)"
+if command -v pyenv-virtualenv-init >/dev/null; then
+  eval "$(pyenv virtualenv-init -)"
+else
+  echo "pyenv-virtualenv is required but not installed." >&2
+  exit 1
 fi
 
 # Create virtualenv if it does not exist
