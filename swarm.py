@@ -40,9 +40,19 @@ while running:
         for i, (x, y) in enumerate(dots):
             dx = 0 if flag_pos[0] == x else (1 if flag_pos[0] > x else -1)
             dy = 0 if flag_pos[1] == y else (1 if flag_pos[1] > y else -1)
+
+            # Occasionally move randomly instead of toward the flag
+            if random.random() < 0.05:
+                dx = random.choice([-1, 0, 1])
+                dy = random.choice([-1, 0, 1])
+
             nx, ny = x + dx, y + dy
-            # Ensure only one dot per pixel
-            if (nx, ny) not in new_occupied and (0 <= nx < WIDTH) and (0 <= ny < HEIGHT):
+            # Ensure only one dot per pixel and stay on screen
+            if (
+                (nx, ny) not in new_occupied
+                and 0 <= nx < WIDTH
+                and 0 <= ny < HEIGHT
+            ):
                 dots[i] = [nx, ny]
                 new_occupied.add((nx, ny))
             else:

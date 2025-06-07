@@ -1,6 +1,6 @@
 # Swarm Simulation
 
-This repository contains a simple Python program that simulates a swarm of red dots on a black background. The user can place a single flag by clicking the mouse, and the dots will attempt to move toward that flag. Only one red dot can occupy a pixel at any time.
+This repository contains a simple Python program that simulates a swarm of red dots on a black background. The user can place a single flag by clicking the mouse, and the dots will attempt to move toward that flag. Only one red dot can occupy a pixel at any time. Dots may move diagonally and occasionally move randomly to create a more natural swarm effect.
 
 ## Requirements
 
