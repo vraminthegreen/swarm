@@ -3,6 +3,7 @@
 import pygame
 import sys
 import random
+import math
 
 WIDTH, HEIGHT = 640, 480
 NUM_ANTS = 200
@@ -17,7 +18,7 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-# Initialize ants at random positions
+# Initialize ants at random positions (floating point coordinates)
 ants = []
 occupied = set()
 def is_valid_position(x, y, others):
@@ -28,65 +29,48 @@ def is_valid_position(x, y, others):
             return False
     return True
 
-def step_away_from_conflict(x, y, others):
-    """Move a step away from the nearest ant violating the distance."""
-    nearest = None
-    min_d2 = MIN_DISTANCE ** 2
-    for ox, oy in others:
-        d2 = (x - ox) ** 2 + (y - oy) ** 2
-        if 0 < d2 < min_d2:
-            min_d2 = d2
-            nearest = (ox, oy)
-    if nearest is None:
-        return x, y
-
-    ox, oy = nearest
-    dx = 0 if x == ox else (1 if x > ox else -1)
-    dy = 0 if y == oy else (1 if y > oy else -1)
-    nx, ny = x + dx, y + dy
-    if is_valid_position(nx, ny, others):
-        return nx, ny
-    return x, y
-
-def pseudo_gravity_move(x, y, flag_pos, others):
-    """Compute a move combining repulsion from nearby ants and attraction to the flag."""
-    ax = ay = 0.0
+def compute_move_vector(x, y, flag_pos, others):
+    """Return a normalized vector combining repulsion, attraction and randomness."""
+    ex = ey = 0.0
     for ox, oy in others:
         dx = x - ox
         dy = y - oy
         d2 = dx * dx + dy * dy
-        if 0 < d2 < MIN_DISTANCE ** 2:
-            dist = d2 ** 0.5
-            ax += dx / dist
-            ay += dy / dist
+        if d2 == 0:
+            continue
+        if d2 < MIN_DISTANCE ** 2:
+            dist = math.sqrt(d2)
+            ex += dx / dist
+            ey += dy / dist
 
     fx = flag_pos[0] - x
     fy = flag_pos[1] - y
-    flen = (fx * fx + fy * fy) ** 0.5
+    flen = math.hypot(fx, fy)
     if flen != 0:
         fx /= flen
         fy /= flen
     else:
         fx = fy = 0.0
 
-    vx = ax + fx
-    vy = ay + fy
-    vlen = (vx * vx + vy * vy) ** 0.5
-    if vlen == 0:
-        return x, y
-    vx /= vlen
-    vy /= vlen
+    angle = random.uniform(0, 2 * math.pi)
+    if random.random() < 0.1:
+        mag = random.uniform(0.5, 3.0)
+    else:
+        mag = random.uniform(0.1, 0.6)
+    rx = math.cos(angle) * mag
+    ry = math.sin(angle) * mag
 
-    step_x = 0 if abs(vx) < 1e-6 else (1 if vx > 0 else -1)
-    step_y = 0 if abs(vy) < 1e-6 else (1 if vy > 0 else -1)
-    nx, ny = x + step_x, y + step_y
-    if is_valid_position(nx, ny, others):
-        return nx, ny
-    return x, y
+    vx = ex + fx + rx
+    vy = ey + fy + ry
+    vlen = math.hypot(vx, vy)
+    if vlen == 0:
+        return 0.0, 0.0
+    return vx / vlen, vy / vlen
+
 
 while len(ants) < NUM_ANTS:
-    x = random.randint(0, WIDTH - 1)
-    y = random.randint(0, HEIGHT - 1)
+    x = random.uniform(0, WIDTH)
+    y = random.uniform(0, HEIGHT)
     if is_valid_position(x, y, occupied):
         ants.append([x, y])
         occupied.add((x, y))
@@ -103,36 +87,22 @@ while running:
 
     # Update ants toward the flag
     if flag_pos is not None:
-        new_occupied = set()
-        for i, (x, y) in enumerate(ants):
-            moved = False
+        proposed = []
+        for x, y in ants:
+            vx, vy = compute_move_vector(x, y, flag_pos, ants)
+            nx = x + vx
+            ny = y + vy
+            nx = max(0, min(WIDTH - 1, nx))
+            ny = max(0, min(HEIGHT - 1, ny))
+            proposed.append((nx, ny))
 
-            # 1. Try a random move first with small probability
-            if random.random() < 0.05:
-                rdx = random.choice([-1, 0, 1])
-                rdy = random.choice([-1, 0, 1])
-                rx, ry = x + rdx, y + rdy
-                if is_valid_position(rx, ry, new_occupied):
-                    nx, ny = rx, ry
-                    moved = True
-
-            if not moved:
-                # 2. Compute pseudo-gravity move
-                px, py = pseudo_gravity_move(x, y, flag_pos, new_occupied)
-                if (px, py) != (x, y):
-                    nx, ny = px, py
-                    moved = True
-
-            if not moved:
-                # 3. If still conflicted, step away from nearby ants
-                if not is_valid_position(x, y, new_occupied):
-                    nx, ny = step_away_from_conflict(x, y, new_occupied)
-                else:
-                    nx, ny = x, y
-
-            ants[i] = [nx, ny]
-            new_occupied.add((nx, ny))
-        occupied = new_occupied
+        new_positions = []
+        for i, (nx, ny) in enumerate(proposed):
+            if is_valid_position(nx, ny, new_positions):
+                new_positions.append((nx, ny))
+            else:
+                new_positions.append(tuple(ants[i]))
+        ants = [list(p) for p in new_positions]
 
     screen.fill(BACKGROUND_COLOR)
     for x, y in ants:
