@@ -25,4 +25,6 @@ Execute the simulation using the provided helper script:
 ./run.sh
 ```
 
-Click anywhere in the window to place the target flag for the swarm.
+Click anywhere in the window to place the target flag for the swarm. The
+simulation updates about 10 times per second and displays a small flag
+instead of a green square.

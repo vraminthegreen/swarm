@@ -7,6 +7,7 @@ NUM_DOTS = 200
 DOT_COLOR = (255, 0, 0)  # red
 BACKGROUND_COLOR = (0, 0, 0)  # black
 FLAG_COLOR = (0, 255, 0)  # green
+FLAG_POLE_COLOR = (200, 200, 200)
 DOT_SIZE = 2
 
 pygame.init()
@@ -49,12 +50,20 @@ while running:
         occupied = new_occupied
 
     screen.fill(BACKGROUND_COLOR)
+    if flag_pos is not None:
+        fx, fy = flag_pos
+        pole_top = (fx, max(0, fy - 10))
+        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos, pole_top)
+        flag_points = [
+            pole_top,
+            (pole_top[0] + 6, pole_top[1] + 3),
+            (pole_top[0], pole_top[1] + 6),
+        ]
+        pygame.draw.polygon(screen, FLAG_COLOR, flag_points)
     for x, y in dots:
         pygame.draw.rect(screen, DOT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
-    if flag_pos is not None:
-        pygame.draw.rect(screen, FLAG_COLOR, (*flag_pos, DOT_SIZE, DOT_SIZE))
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(10)
 
 pygame.quit()
 sys.exit()
