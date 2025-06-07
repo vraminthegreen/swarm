@@ -69,27 +69,40 @@ while running:
     if flag_pos is not None:
         new_occupied = set()
         for i, (x, y) in enumerate(ants):
-            dx = 0 if flag_pos[0] == x else (1 if flag_pos[0] > x else -1)
-            dy = 0 if flag_pos[1] == y else (1 if flag_pos[1] > y else -1)
+            moved = False
 
-            # Occasionally move randomly instead of toward the flag
+            # 1. Try a random move first with small probability
             if random.random() < 0.05:
-                dx = random.choice([-1, 0, 1])
-                dy = random.choice([-1, 0, 1])
+                rdx = random.choice([-1, 0, 1])
+                rdy = random.choice([-1, 0, 1])
+                rx, ry = x + rdx, y + rdy
+                if is_valid_position(rx, ry, new_occupied):
+                    nx, ny = rx, ry
+                    moved = True
 
-            nx, ny = x + dx, y + dy
-            # Ensure ants keep minimum distance from each other
-            if not is_valid_position(nx, ny, new_occupied):
-                if is_valid_position(x, y, new_occupied):
-                    nx, ny = x, y
-                else:
+            if not moved:
+                # 2. Move toward the flag if possible
+                dx = 0 if flag_pos[0] == x else (1 if flag_pos[0] > x else -1)
+                dy = 0 if flag_pos[1] == y else (1 if flag_pos[1] > y else -1)
+                tx, ty = x + dx, y + dy
+                if is_valid_position(tx, ty, new_occupied):
+                    nx, ny = tx, ty
+                    moved = True
+
+            if not moved:
+                # 3. If still conflicted, step away from nearby ants
+                if not is_valid_position(x, y, new_occupied):
                     nx, ny = step_away_from_conflict(x, y, new_occupied)
+                else:
+                    nx, ny = x, y
 
             ants[i] = [nx, ny]
             new_occupied.add((nx, ny))
         occupied = new_occupied
 
     screen.fill(BACKGROUND_COLOR)
+    for x, y in ants:
+        pygame.draw.rect(screen, ANT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
     if flag_pos is not None:
         fx, fy = flag_pos
         pole_top = (fx, max(0, fy - 10))
@@ -100,8 +113,6 @@ while running:
             (pole_top[0], pole_top[1] + 6),
         ]
         pygame.draw.polygon(screen, FLAG_COLOR, flag_points)
-    for x, y in ants:
-        pygame.draw.rect(screen, ANT_COLOR, (x, y, DOT_SIZE, DOT_SIZE))
     pygame.display.flip()
     clock.tick(10)
 
