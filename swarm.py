@@ -28,6 +28,26 @@ def is_valid_position(x, y, others):
             return False
     return True
 
+def step_away_from_conflict(x, y, others):
+    """Move a step away from the nearest ant violating the distance."""
+    nearest = None
+    min_d2 = MIN_DISTANCE ** 2
+    for ox, oy in others:
+        d2 = (x - ox) ** 2 + (y - oy) ** 2
+        if 0 < d2 < min_d2:
+            min_d2 = d2
+            nearest = (ox, oy)
+    if nearest is None:
+        return x, y
+
+    ox, oy = nearest
+    dx = 0 if x == ox else (1 if x > ox else -1)
+    dy = 0 if y == oy else (1 if y > oy else -1)
+    nx, ny = x + dx, y + dy
+    if is_valid_position(nx, ny, others):
+        return nx, ny
+    return x, y
+
 while len(ants) < NUM_ANTS:
     x = random.randint(0, WIDTH - 1)
     y = random.randint(0, HEIGHT - 1)
@@ -63,12 +83,7 @@ while running:
                 if is_valid_position(x, y, new_occupied):
                     nx, ny = x, y
                 else:
-                    for _ in range(100):
-                        rx = random.randint(0, WIDTH - 1)
-                        ry = random.randint(0, HEIGHT - 1)
-                        if is_valid_position(rx, ry, new_occupied):
-                            nx, ny = rx, ry
-                            break
+                    nx, ny = step_away_from_conflict(x, y, new_occupied)
 
             ants[i] = [nx, ny]
             new_occupied.add((nx, ny))
