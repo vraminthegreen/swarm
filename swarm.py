@@ -20,6 +20,8 @@ FLAG_POLE_COLOR = (200, 200, 200)
 FLAG_SIZE = 12  # twice the original size
 DOT_SIZE = 2
 MIN_DISTANCE = 5  # minimum distance between ants in pixels
+ATTACK_RANGE = 7  # distance within which ants will attack instead of moving
+KILL_PROBABILITY = 0.1  # chance that an attack kills the target
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -76,6 +78,20 @@ def compute_move_vector(x, y, flag_pos, others):
     return vx / vlen, vy / vlen
 
 
+def find_nearest_enemy(x, y, enemies):
+    """Return the index of the nearest enemy within ATTACK_RANGE or None."""
+    best_idx = None
+    best_d2 = ATTACK_RANGE * ATTACK_RANGE + 1
+    for i, (ex, ey) in enumerate(enemies):
+        d2 = (ex - x) ** 2 + (ey - y) ** 2
+        if d2 < best_d2:
+            best_d2 = d2
+            best_idx = i
+    if best_d2 <= ATTACK_RANGE * ATTACK_RANGE:
+        return best_idx
+    return None
+
+
 # Place red ants in the lower-left corner (25% of the screen)
 while len(ants_red) < NUM_ANTS:
     x = random.uniform(0, WIDTH * 0.25)
@@ -112,9 +128,31 @@ while running:
 
     all_ants = ants_red + ants_blue
 
+    killed_red = set()
+    killed_blue = set()
+    attackers_red = set()
+    attackers_blue = set()
+
+    for i, (x, y) in enumerate(ants_red):
+        target = find_nearest_enemy(x, y, ants_blue)
+        if target is not None:
+            attackers_red.add(i)
+            if random.random() < KILL_PROBABILITY:
+                killed_blue.add(target)
+
+    for i, (x, y) in enumerate(ants_blue):
+        target = find_nearest_enemy(x, y, ants_red)
+        if target is not None:
+            attackers_blue.add(i)
+            if random.random() < KILL_PROBABILITY:
+                killed_red.add(target)
+
     if flag_pos_red is not None:
         proposed_red = []
-        for x, y in ants_red:
+        for i, (x, y) in enumerate(ants_red):
+            if i in attackers_red:
+                proposed_red.append((x, y))
+                continue
             vx, vy = compute_move_vector(x, y, flag_pos_red, all_ants)
             nx = max(0, min(WIDTH - 1, x + vx))
             ny = max(0, min(HEIGHT - 1, y + vy))
@@ -123,7 +161,10 @@ while running:
         proposed_red = [tuple(a) for a in ants_red]
 
     proposed_blue = []
-    for x, y in ants_blue:
+    for i, (x, y) in enumerate(ants_blue):
+        if i in attackers_blue:
+            proposed_blue.append((x, y))
+            continue
         vx, vy = compute_move_vector(x, y, flag_pos_blue, all_ants)
         nx = max(0, min(WIDTH - 1, x + vx))
         ny = max(0, min(HEIGHT - 1, y + vy))
@@ -134,6 +175,8 @@ while running:
     occupied_new = []
 
     for i, (nx, ny) in enumerate(proposed_red):
+        if i in killed_red:
+            continue
         if is_valid_position(nx, ny, occupied_new):
             new_ants_red.append((nx, ny))
             occupied_new.append((nx, ny))
@@ -142,6 +185,8 @@ while running:
             occupied_new.append(tuple(ants_red[i]))
 
     for i, (nx, ny) in enumerate(proposed_blue):
+        if i in killed_blue:
+            continue
         if is_valid_position(nx, ny, occupied_new):
             new_ants_blue.append((nx, ny))
             occupied_new.append((nx, ny))
