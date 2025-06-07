@@ -3,7 +3,7 @@ import sys
 import random
 
 WIDTH, HEIGHT = 640, 480
-NUM_DOTS = 50
+NUM_DOTS = 200
 DOT_COLOR = (255, 0, 0)  # red
 BACKGROUND_COLOR = (0, 0, 0)  # black
 FLAG_COLOR = (0, 255, 0)  # green
