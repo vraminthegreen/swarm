@@ -11,11 +11,11 @@ NUM_ANTS = 200
 NUM_ANTS_BLUE = 200
 
 ANT_COLOR_RED = (255, 0, 0)
-ANT_COLOR_BLUE = (0, 0, 255)
+ANT_COLOR_BLUE = (0, 255, 255)  # cyan
 
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
-FLAG_COLOR_BLUE = (0, 0, 255)
+FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
 FLAG_POLE_COLOR = (200, 200, 200)
 FLAG_SIZE = 12  # twice the original size
 DOT_SIZE = 2
@@ -76,16 +76,18 @@ def compute_move_vector(x, y, flag_pos, others):
     return vx / vlen, vy / vlen
 
 
+# Place red ants in the lower-left corner (25% of the screen)
 while len(ants_red) < NUM_ANTS:
-    x = random.uniform(0, WIDTH)
-    y = random.uniform(0, HEIGHT)
+    x = random.uniform(0, WIDTH * 0.25)
+    y = random.uniform(HEIGHT * 0.75, HEIGHT)
     if is_valid_position(x, y, occupied):
         ants_red.append([x, y])
         occupied.add((x, y))
 
+# Place blue ants in the upper-right corner (25% of the screen)
 while len(ants_blue) < NUM_ANTS_BLUE:
-    x = random.uniform(0, WIDTH)
-    y = random.uniform(0, HEIGHT)
+    x = random.uniform(WIDTH * 0.75, WIDTH)
+    y = random.uniform(0, HEIGHT * 0.25)
     if is_valid_position(x, y, occupied):
         ants_blue.append([x, y])
         occupied.add((x, y))
