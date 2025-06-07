@@ -17,10 +17,10 @@ BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
 FLAG_POLE_COLOR = (200, 200, 200)
-FLAG_SIZE = 12  # twice the original size
+FLAG_SIZE = 12
 DOT_SIZE = 2
-MIN_DISTANCE = 5  # minimum distance between ants in pixels
-ATTACK_RANGE = 7  # distance within which ants will attack instead of moving
+MIN_DISTANCE = 4  # minimum distance between ants in pixels
+ATTACK_RANGE = 9  # distance within which ants will attack instead of moving
 KILL_PROBABILITY = 0.1  # chance that an attack kills the target
 
 pygame.init()
@@ -226,7 +226,7 @@ while running:
         pygame.draw.polygon(screen, FLAG_COLOR_BLUE, flag_points)
 
     pygame.display.flip()
-    clock.tick(10)
+    clock.tick(20)
 
 pygame.quit()
 sys.exit()
