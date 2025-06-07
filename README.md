@@ -6,19 +6,16 @@ This repository contains a simple Python program that simulates a swarm of red d
 
 - Python 3
 - [Pygame](https://www.pygame.org/)
+- [pyenv](https://github.com/pyenv/pyenv) with pyenv-virtualenv
 
-Install Pygame using pip:
-
-```bash
-pip install pygame
-```
+Dependencies will be installed automatically when running `run.sh`.
 
 ## Running
 
-Execute the simulation with:
+Execute the simulation using the provided helper script:
 
 ```bash
-python swarm.py
+./run.sh
 ```
 
 Click anywhere in the window to place the target flag for the swarm.
