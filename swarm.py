@@ -48,6 +48,42 @@ def step_away_from_conflict(x, y, others):
         return nx, ny
     return x, y
 
+def pseudo_gravity_move(x, y, flag_pos, others):
+    """Compute a move combining repulsion from nearby ants and attraction to the flag."""
+    ax = ay = 0.0
+    for ox, oy in others:
+        dx = x - ox
+        dy = y - oy
+        d2 = dx * dx + dy * dy
+        if 0 < d2 < MIN_DISTANCE ** 2:
+            dist = d2 ** 0.5
+            ax += dx / dist
+            ay += dy / dist
+
+    fx = flag_pos[0] - x
+    fy = flag_pos[1] - y
+    flen = (fx * fx + fy * fy) ** 0.5
+    if flen != 0:
+        fx /= flen
+        fy /= flen
+    else:
+        fx = fy = 0.0
+
+    vx = ax + fx
+    vy = ay + fy
+    vlen = (vx * vx + vy * vy) ** 0.5
+    if vlen == 0:
+        return x, y
+    vx /= vlen
+    vy /= vlen
+
+    step_x = 0 if abs(vx) < 1e-6 else (1 if vx > 0 else -1)
+    step_y = 0 if abs(vy) < 1e-6 else (1 if vy > 0 else -1)
+    nx, ny = x + step_x, y + step_y
+    if is_valid_position(nx, ny, others):
+        return nx, ny
+    return x, y
+
 while len(ants) < NUM_ANTS:
     x = random.randint(0, WIDTH - 1)
     y = random.randint(0, HEIGHT - 1)
@@ -81,12 +117,10 @@ while running:
                     moved = True
 
             if not moved:
-                # 2. Move toward the flag if possible
-                dx = 0 if flag_pos[0] == x else (1 if flag_pos[0] > x else -1)
-                dy = 0 if flag_pos[1] == y else (1 if flag_pos[1] > y else -1)
-                tx, ty = x + dx, y + dy
-                if is_valid_position(tx, ty, new_occupied):
-                    nx, ny = tx, ty
+                # 2. Compute pseudo-gravity move
+                px, py = pseudo_gravity_move(x, y, flag_pos, new_occupied)
+                if (px, py) != (x, y):
+                    nx, ny = px, py
                     moved = True
 
             if not moved:
