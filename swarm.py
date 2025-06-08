@@ -7,7 +7,9 @@ import math
 import time
 
 WIDTH, HEIGHT = 640, 480
-NUM_ANTS = 200
+# Number of classic red ants and the new circle-type ants
+NUM_ANTS_RED_CLASSIC = 150
+NUM_ANTS_RED_CIRCLE = 50
 NUM_ANTS_BLUE = 200
 
 ANT_COLOR_RED = (255, 0, 0)
@@ -23,6 +25,9 @@ def lighten(color, factor=0.5):
 
 ANT_COLOR_RED_ENGAGED = lighten(ANT_COLOR_RED)
 ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
+# Color for the new circle-type ants
+ANT_COLOR_CIRCLE = (0, 255, 0)  # green
+ANT_COLOR_CIRCLE_ENGAGED = lighten(ANT_COLOR_CIRCLE)
 
 # Flag types
 FLAG_TYPE_NORMAL = "normal"
@@ -46,7 +51,8 @@ font = pygame.font.Font(None, 24)
 flag_font = pygame.font.Font(None, 16)
 
 # Initialize ants for both players at random positions
-ants_red = []
+ants_red = []  # classic red ants
+ants_circle = []  # new circle-type ants
 ants_blue = []
 occupied = set()
 def is_valid_position(x, y, others):
@@ -236,12 +242,20 @@ def draw_flag_icon(idx, flag_type=FLAG_TYPE_NORMAL, active=False):
         pygame.draw.rect(screen, (255, 255, 0), rect, 1)
 
 
-# Place red ants in the lower-left corner (25% of the screen)
-while len(ants_red) < NUM_ANTS:
+# Place classic red ants in the lower-left corner (25% of the screen)
+while len(ants_red) < NUM_ANTS_RED_CLASSIC:
     x = random.uniform(0, WIDTH * 0.25)
     y = random.uniform(HEIGHT * 0.75, HEIGHT)
     if is_valid_position(x, y, occupied):
         ants_red.append([x, y])
+        occupied.add((x, y))
+
+# Place circle-type ants in the same area
+while len(ants_circle) < NUM_ANTS_RED_CIRCLE:
+    x = random.uniform(0, WIDTH * 0.25)
+    y = random.uniform(HEIGHT * 0.75, HEIGHT)
+    if is_valid_position(x, y, occupied):
+        ants_circle.append([x, y])
         occupied.add((x, y))
 
 # Place blue ants in the upper-right corner (25% of the screen)
@@ -287,16 +301,27 @@ while running:
         flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
         next_flag_move = now + random.uniform(5, 30)
 
-    all_ants = ants_red + ants_blue
+    all_ants = ants_red + ants_circle + ants_blue
 
-    attackers_red, killed_blue = handle_attacks(ants_red, ants_blue, flags_red)
-    attackers_blue, killed_red = handle_attacks(
+    attackers_red, killed_blue_from_red = handle_attacks(
+        ants_red, ants_blue, flags_red
+    )
+    attackers_circle, killed_blue_from_circle = handle_attacks(
+        ants_circle, ants_blue, flags_red
+    )
+    attackers_blue, killed_red_all = handle_attacks(
         ants_blue,
-        ants_red,
+        ants_red + ants_circle,
         [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
     )
+    killed_blue = killed_blue_from_red.union(killed_blue_from_circle)
+    killed_red = {i for i in killed_red_all if i < len(ants_red)}
+    killed_circle = {i - len(ants_red) for i in killed_red_all if i >= len(ants_red)}
 
     proposed_red = propose_moves(ants_red, attackers_red, flags_red, all_ants)
+    proposed_circle = propose_moves(
+        ants_circle, attackers_circle, flags_red, all_ants
+    )
     proposed_blue = propose_moves(
         ants_blue,
         attackers_blue,
@@ -305,17 +330,28 @@ while running:
     )
 
     new_ants_red = []
+    new_ants_circle = []
     new_ants_blue = []
     occupied_new = []
 
     new_ants_red = resolve_positions(ants_red, proposed_red, killed_red, occupied_new)
+    new_ants_circle = resolve_positions(
+        ants_circle, proposed_circle, killed_circle, occupied_new
+    )
     new_ants_blue = resolve_positions(ants_blue, proposed_blue, killed_blue, occupied_new)
 
     ants_red = [list(p) for p in new_ants_red]
+    ants_circle = [list(p) for p in new_ants_circle]
     ants_blue = [list(p) for p in new_ants_blue]
 
     screen.fill(BACKGROUND_COLOR)
     draw_ants(ants_red, ANT_COLOR_RED, attackers_red, ANT_COLOR_RED_ENGAGED)
+    draw_ants(
+        ants_circle,
+        ANT_COLOR_CIRCLE,
+        attackers_circle,
+        ANT_COLOR_CIRCLE_ENGAGED,
+    )
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
     for idx, flag in enumerate(flags_red, start=1):
@@ -327,7 +363,7 @@ while running:
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
-        f"Red: {len(ants_red)}  Blue: {len(ants_blue)}",
+        f"Classic: {len(ants_red)}  Circle: {len(ants_circle)}  Blue: {len(ants_blue)}",
         True,
         (255, 255, 255),
     )
@@ -335,7 +371,10 @@ while running:
     screen.blit(count_text, text_rect)
 
     engaged_text = font.render(
-        f"Engaged - Red: {len(attackers_red)}  Blue: {len(attackers_blue)}",
+        (
+            f"Engaged - Classic: {len(attackers_red)}  "
+            f"Circle: {len(attackers_circle)}  Blue: {len(attackers_blue)}"
+        ),
         True,
         (255, 255, 255),
     )
