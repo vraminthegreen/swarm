@@ -31,7 +31,7 @@ FLAG_POLE_COLOR = (200, 200, 200)
 FLAG_SIZE = 12
 DOT_SIZE = 2
 MIN_DISTANCE = 4  # minimum distance between ants in pixels
-ATTACK_RANGE = 9  # distance within which ants will attack instead of moving
+ATTACK_RANGE = 12  # distance within which ants will attack instead of moving
 KILL_PROBABILITY = 0.02  # chance that an attack kills the target
 
 pygame.init()
