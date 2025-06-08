@@ -93,6 +93,69 @@ def find_nearest_enemy(x, y, enemies):
     return None
 
 
+def handle_attacks(ants, enemies):
+    """Return sets of attackers and killed enemy indices."""
+    attackers = set()
+    killed = set()
+    for i, (x, y) in enumerate(ants):
+        target = find_nearest_enemy(x, y, enemies)
+        if target is not None:
+            attackers.add(i)
+            if random.random() < KILL_PROBABILITY:
+                killed.add(target)
+    return attackers, killed
+
+
+def propose_moves(ants, attackers, flag_pos, all_ants):
+    """Return proposed new positions for ants."""
+    proposed = []
+    for i, (x, y) in enumerate(ants):
+        if i in attackers or flag_pos is None:
+            proposed.append((x, y))
+            continue
+        vx, vy = compute_move_vector(x, y, flag_pos, all_ants)
+        nx = max(0, min(WIDTH - 1, x + vx))
+        ny = max(0, min(HEIGHT - 1, y + vy))
+        proposed.append((nx, ny))
+    return proposed
+
+
+def resolve_positions(ants, proposed, killed, occupied_new):
+    """Update ant positions based on proposals and deaths."""
+    new_ants = []
+    for i, (nx, ny) in enumerate(proposed):
+        if i in killed:
+            continue
+        if is_valid_position(nx, ny, occupied_new):
+            new_ants.append((nx, ny))
+            occupied_new.append((nx, ny))
+        else:
+            new_ants.append(tuple(ants[i]))
+            occupied_new.append(tuple(ants[i]))
+    return new_ants
+
+
+def draw_ants(ants, color):
+    """Draw ants with the specified color."""
+    for x, y in ants:
+        pygame.draw.rect(screen, color, (x, y, DOT_SIZE, DOT_SIZE))
+
+
+def draw_flag(flag_pos, color):
+    """Draw a flag if its position is defined."""
+    if flag_pos is None:
+        return
+    fx, fy = flag_pos
+    pole_top = (fx, max(0, fy - 10))
+    pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos, pole_top)
+    flag_points = [
+        pole_top,
+        (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
+        (pole_top[0], pole_top[1] + FLAG_SIZE),
+    ]
+    pygame.draw.polygon(screen, color, flag_points)
+
+
 # Place red ants in the lower-left corner (25% of the screen)
 while len(ants_red) < NUM_ANTS:
     x = random.uniform(0, WIDTH * 0.25)
@@ -129,102 +192,28 @@ while running:
 
     all_ants = ants_red + ants_blue
 
-    killed_red = set()
-    killed_blue = set()
-    attackers_red = set()
-    attackers_blue = set()
+    attackers_red, killed_blue = handle_attacks(ants_red, ants_blue)
+    attackers_blue, killed_red = handle_attacks(ants_blue, ants_red)
 
-    for i, (x, y) in enumerate(ants_red):
-        target = find_nearest_enemy(x, y, ants_blue)
-        if target is not None:
-            attackers_red.add(i)
-            if random.random() < KILL_PROBABILITY:
-                killed_blue.add(target)
-
-    for i, (x, y) in enumerate(ants_blue):
-        target = find_nearest_enemy(x, y, ants_red)
-        if target is not None:
-            attackers_blue.add(i)
-            if random.random() < KILL_PROBABILITY:
-                killed_red.add(target)
-
-    if flag_pos_red is not None:
-        proposed_red = []
-        for i, (x, y) in enumerate(ants_red):
-            if i in attackers_red:
-                proposed_red.append((x, y))
-                continue
-            vx, vy = compute_move_vector(x, y, flag_pos_red, all_ants)
-            nx = max(0, min(WIDTH - 1, x + vx))
-            ny = max(0, min(HEIGHT - 1, y + vy))
-            proposed_red.append((nx, ny))
-    else:
-        proposed_red = [tuple(a) for a in ants_red]
-
-    proposed_blue = []
-    for i, (x, y) in enumerate(ants_blue):
-        if i in attackers_blue:
-            proposed_blue.append((x, y))
-            continue
-        vx, vy = compute_move_vector(x, y, flag_pos_blue, all_ants)
-        nx = max(0, min(WIDTH - 1, x + vx))
-        ny = max(0, min(HEIGHT - 1, y + vy))
-        proposed_blue.append((nx, ny))
+    proposed_red = propose_moves(ants_red, attackers_red, flag_pos_red, all_ants)
+    proposed_blue = propose_moves(ants_blue, attackers_blue, flag_pos_blue, all_ants)
 
     new_ants_red = []
     new_ants_blue = []
     occupied_new = []
 
-    for i, (nx, ny) in enumerate(proposed_red):
-        if i in killed_red:
-            continue
-        if is_valid_position(nx, ny, occupied_new):
-            new_ants_red.append((nx, ny))
-            occupied_new.append((nx, ny))
-        else:
-            new_ants_red.append(tuple(ants_red[i]))
-            occupied_new.append(tuple(ants_red[i]))
-
-    for i, (nx, ny) in enumerate(proposed_blue):
-        if i in killed_blue:
-            continue
-        if is_valid_position(nx, ny, occupied_new):
-            new_ants_blue.append((nx, ny))
-            occupied_new.append((nx, ny))
-        else:
-            new_ants_blue.append(tuple(ants_blue[i]))
-            occupied_new.append(tuple(ants_blue[i]))
+    new_ants_red = resolve_positions(ants_red, proposed_red, killed_red, occupied_new)
+    new_ants_blue = resolve_positions(ants_blue, proposed_blue, killed_blue, occupied_new)
 
     ants_red = [list(p) for p in new_ants_red]
     ants_blue = [list(p) for p in new_ants_blue]
 
     screen.fill(BACKGROUND_COLOR)
-    for x, y in ants_red:
-        pygame.draw.rect(screen, ANT_COLOR_RED, (x, y, DOT_SIZE, DOT_SIZE))
-    for x, y in ants_blue:
-        pygame.draw.rect(screen, ANT_COLOR_BLUE, (x, y, DOT_SIZE, DOT_SIZE))
+    draw_ants(ants_red, ANT_COLOR_RED)
+    draw_ants(ants_blue, ANT_COLOR_BLUE)
 
-    if flag_pos_red is not None:
-        fx, fy = flag_pos_red
-        pole_top = (fx, max(0, fy - 10))
-        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos_red, pole_top)
-        flag_points = [
-            pole_top,
-            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
-            (pole_top[0], pole_top[1] + FLAG_SIZE),
-        ]
-        pygame.draw.polygon(screen, FLAG_COLOR_RED, flag_points)
-
-    if flag_pos_blue is not None:
-        fx, fy = flag_pos_blue
-        pole_top = (fx, max(0, fy - 10))
-        pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos_blue, pole_top)
-        flag_points = [
-            pole_top,
-            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
-            (pole_top[0], pole_top[1] + FLAG_SIZE),
-        ]
-        pygame.draw.polygon(screen, FLAG_COLOR_BLUE, flag_points)
+    draw_flag(flag_pos_red, FLAG_COLOR_RED)
+    draw_flag(flag_pos_blue, FLAG_COLOR_BLUE)
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(f"Red: {len(ants_red)}  Blue: {len(ants_blue)}", True, (255, 255, 255))
