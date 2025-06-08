@@ -28,8 +28,9 @@ Execute the simulation using the provided helper script:
 Use the `1` and `2` keys to choose which red flag is active. The icons for the
 two flags are shown at the bottom of the window. The active flag is highlighted
 with a rectangle. Click anywhere to place the currently active flag. Press the
-`Delete` key to remove it. The simulation updates about 10 times per second and
-displays a small flag instead of a green square.
+`Delete` key (or `Backspace` on macOS keyboards) to remove it. The simulation
+updates about 10 times per second and displays a small flag instead of a green
+square.
 
 ## Gameplay
 

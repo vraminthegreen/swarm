@@ -199,7 +199,7 @@ def draw_flag_icon(idx, active=False):
     base_y = HEIGHT - 5
     draw_flag((base_x, base_y), FLAG_COLOR_RED, idx + 1)
     if active:
-        rect = pygame.Rect(base_x - FLAG_SIZE - 4, base_y - 16, FLAG_SIZE + 12, FLAG_SIZE + 20)
+        rect = pygame.Rect(base_x - 4, base_y - 16, FLAG_SIZE + 12, FLAG_SIZE + 20)
         pygame.draw.rect(screen, (255, 255, 0), rect, 1)
 
 
@@ -234,7 +234,7 @@ while running:
                 active_flag_idx = 0
             elif event.key == pygame.K_2:
                 active_flag_idx = 1
-            elif event.key == pygame.K_DELETE:
+            elif event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
                 flags_red[active_flag_idx] = None
         elif event.type == pygame.MOUSEBUTTONDOWN:
             flags_red[active_flag_idx] = event.pos
