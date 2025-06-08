@@ -36,6 +36,9 @@ square.
 
 ## Gameplay
 
-Each ant attacks the closest enemy within `ATTACK_RANGE` pixels (default `7`).
-An attack kills the target with probability defined by `KILL_PROBABILITY`
-(default `0.02`). Defeated ants are removed from the simulation.
+Footmen attack the closest enemy within `ATTACK_RANGE` pixels (default `12`).
+Their attacks kill the target with probability defined by `KILL_PROBABILITY`
+(default `0.02`). Archers behave differently: they can attack from
+`ARCHER_ATTACK_RANGE` pixels (60 by default) but with a reduced kill chance of
+`ARCHER_KILL_PROBABILITY` (one third of the footman value). Defeated ants are
+removed from the simulation.

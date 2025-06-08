@@ -44,8 +44,14 @@ FLAG_POLE_COLOR = (200, 200, 200)
 FLAG_SIZE = 12
 DOT_SIZE = 4
 MIN_DISTANCE = 4  # minimum distance between ants in pixels
-ATTACK_RANGE = 12  # distance within which ants will attack instead of moving
-KILL_PROBABILITY = 0.02  # chance that an attack kills the target
+ATTACK_RANGE = 12  # distance within which footmen attack instead of moving
+KILL_PROBABILITY = 0.02  # chance that a footman attack kills the target
+
+# Archers behave differently: they can shoot from much farther away but are
+# less lethal.  ARCHER_ATTACK_RANGE defines how far an archer can shoot and
+# ARCHER_KILL_PROBABILITY controls the probability of killing the target.
+ARCHER_ATTACK_RANGE = 60
+ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -106,21 +112,21 @@ def compute_move_vector(x, y, flag_pos, others):
     return vx / vlen, vy / vlen
 
 
-def find_nearest_enemy(x, y, enemies):
-    """Return the index of the nearest enemy within ATTACK_RANGE or None."""
+def find_nearest_enemy(x, y, enemies, attack_range):
+    """Return the index of the nearest enemy within ``attack_range`` or None."""
     best_idx = None
-    best_d2 = ATTACK_RANGE * ATTACK_RANGE + 1
+    best_d2 = attack_range * attack_range + 1
     for i, (ex, ey) in enumerate(enemies):
         d2 = (ex - x) ** 2 + (ey - y) ** 2
         if d2 < best_d2:
             best_d2 = d2
             best_idx = i
-    if best_d2 <= ATTACK_RANGE * ATTACK_RANGE:
+    if best_d2 <= attack_range * attack_range:
         return best_idx
     return None
 
 
-def handle_attacks(ants, enemies, flags):
+def handle_attacks(ants, enemies, flags, attack_range=ATTACK_RANGE, kill_probability=KILL_PROBABILITY):
     """Return sets of attackers and killed enemy indices considering flag types."""
     attackers = set()
     killed = set()
@@ -128,10 +134,10 @@ def handle_attacks(ants, enemies, flags):
         flag = nearest_flag(x, y, flags)
         if flag and flag["type"] == FLAG_TYPE_FAST:
             continue  # cannot attack when heading to a fast flag
-        target = find_nearest_enemy(x, y, enemies)
+        target = find_nearest_enemy(x, y, enemies, attack_range)
         if target is not None:
             attackers.add(i)
-            if random.random() < KILL_PROBABILITY:
+            if random.random() < kill_probability:
                 killed.add(target)
     return attackers, killed
 
@@ -334,7 +340,11 @@ while running:
         ants_footmen, ants_blue + ants_blue_archers, flags_red
     )
     attackers_archers, killed_blue_from_archers = handle_attacks(
-        ants_archers, ants_blue + ants_blue_archers, flags_red
+        ants_archers,
+        ants_blue + ants_blue_archers,
+        flags_red,
+        attack_range=ARCHER_ATTACK_RANGE,
+        kill_probability=ARCHER_KILL_PROBABILITY,
     )
     attackers_blue, killed_red_all_from_blue = handle_attacks(
         ants_blue,
@@ -345,6 +355,8 @@ while running:
         ants_blue_archers,
         ants_footmen + ants_archers,
         [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        attack_range=ARCHER_ATTACK_RANGE,
+        kill_probability=ARCHER_KILL_PROBABILITY,
     )
     killed_blue_all = killed_blue_from_footmen.union(killed_blue_from_archers)
     killed_red_all = killed_red_all_from_blue.union(killed_red_all_from_blue_archers)
