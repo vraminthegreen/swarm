@@ -329,8 +329,14 @@ flags_red = [
     {"pos": None, "type": FLAG_TYPE_STOP},
 ]
 active_flag_idx = 0
-flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
-next_flag_move = time.time() + random.uniform(5, 30)
+
+# Blue team alternates between footman and archer flags
+flags_blue = [
+    {"pos": (random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), "type": FLAG_TYPE_NORMAL},
+    {"pos": None, "type": FLAG_TYPE_ARCHER},
+]
+next_blue_flag_idx = 1
+next_blue_flag_move = time.time() + random.uniform(5, 20)
 
 running = True
 while running:
@@ -351,11 +357,15 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             flags_red[active_flag_idx]["pos"] = event.pos
 
-    # move the computer-controlled flag occasionally
+    # move the computer-controlled flags alternately
     now = time.time()
-    if now >= next_flag_move:
-        flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
-        next_flag_move = now + random.uniform(5, 30)
+    if now >= next_blue_flag_move:
+        flags_blue[next_blue_flag_idx]["pos"] = (
+            random.uniform(0, WIDTH),
+            random.uniform(0, HEIGHT),
+        )
+        next_blue_flag_idx = 1 - next_blue_flag_idx
+        next_blue_flag_move = now + random.uniform(5, 20)
 
     all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
@@ -375,12 +385,12 @@ while running:
     attackers_blue, killed_red_all_from_blue = handle_attacks(
         ants_blue,
         ants_footmen + ants_archers,
-        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        [flags_blue[0]],
     )
     attackers_blue_archers, killed_red_all_from_blue_archers = handle_attacks(
         ants_blue_archers,
         ants_footmen + ants_archers,
-        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        [flags_blue[1]],
         attack_range=ARCHER_ATTACK_RANGE,
         kill_probability=ARCHER_KILL_PROBABILITY,
     )
@@ -400,13 +410,13 @@ while running:
     proposed_blue = propose_moves(
         ants_blue,
         attackers_blue,
-        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        [flags_blue[0]],
         all_ants,
     )
     proposed_blue_archers = propose_moves(
         ants_blue_archers,
         attackers_blue_archers,
-        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        [flags_blue[1]],
         all_ants,
     )
 
@@ -450,7 +460,8 @@ while running:
 
     for idx, flag in enumerate(flags_red, start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
-    draw_flag(flag_pos_blue, FLAG_COLOR_BLUE)
+    for flag in flags_blue:
+        draw_flag(flag["pos"], FLAG_COLOR_BLUE)
 
     for idx, flag in enumerate(flags_red):
         draw_flag_icon(idx, flag["type"], idx == active_flag_idx)
