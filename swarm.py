@@ -27,6 +27,7 @@ ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
 # Flag types
 FLAG_TYPE_NORMAL = "normal"
 FLAG_TYPE_FAST = "fast"
+FLAG_TYPE_STOP = "stop"
 
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
@@ -152,7 +153,8 @@ def propose_moves(ants, attackers, flags, all_ants):
         speed_mult = 1.5 if flag["type"] == FLAG_TYPE_FAST else 1.0
         speed = (0.3 if i in attackers else 1.0) * speed_mult
 
-        vx, vy = compute_move_vector(x, y, flag["pos"], all_ants)
+        target_pos = (x, y) if flag["type"] == FLAG_TYPE_STOP else flag["pos"]
+        vx, vy = compute_move_vector(x, y, target_pos, all_ants)
         nx = max(0, min(WIDTH - 1, x + vx * speed))
         ny = max(0, min(HEIGHT - 1, y + vy * speed))
         proposed.append((nx, ny))
@@ -200,6 +202,15 @@ def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
         bottom2 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE)
         pygame.draw.polygon(screen, color, [left1, right1, bottom1])
         pygame.draw.polygon(screen, color, [left2, right2, bottom2])
+    elif flag_type == FLAG_TYPE_STOP:
+        bar_height = 3
+        gap = 2
+        rect1 = pygame.Rect(pole_top[0], pole_top[1], FLAG_SIZE, bar_height)
+        rect2 = pygame.Rect(
+            pole_top[0], pole_top[1] + bar_height + gap, FLAG_SIZE, bar_height
+        )
+        pygame.draw.rect(screen, color, rect1)
+        pygame.draw.rect(screen, color, rect2)
     else:
         flag_points = [
             pole_top,
@@ -244,6 +255,7 @@ flags_red = [
     {"pos": None, "type": FLAG_TYPE_NORMAL},
     {"pos": None, "type": FLAG_TYPE_NORMAL},
     {"pos": None, "type": FLAG_TYPE_FAST},
+    {"pos": None, "type": FLAG_TYPE_STOP},
 ]
 active_flag_idx = 0
 flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
@@ -261,6 +273,8 @@ while running:
                 active_flag_idx = 1
             elif event.key == pygame.K_3:
                 active_flag_idx = 2
+            elif event.key == pygame.K_4:
+                active_flag_idx = 3
             elif event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
                 flags_red[active_flag_idx]["pos"] = None
         elif event.type == pygame.MOUSEBUTTONDOWN:
