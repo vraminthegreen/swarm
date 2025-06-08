@@ -34,7 +34,7 @@ FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
 FLAG_POLE_COLOR = (200, 200, 200)
 FLAG_SIZE = 12
-DOT_SIZE = 2
+DOT_SIZE = 4
 MIN_DISTANCE = 4  # minimum distance between ants in pixels
 ATTACK_RANGE = 12  # distance within which ants will attack instead of moving
 KILL_PROBABILITY = 0.02  # chance that an attack kills the target
@@ -182,7 +182,8 @@ def draw_ants(ants, color, engaged=None, engaged_color=None):
         c = color
         if engaged and i in engaged:
             c = engaged_color if engaged_color else color
-        pygame.draw.rect(screen, c, (x, y, DOT_SIZE, DOT_SIZE))
+        center = (int(x), int(y))
+        pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
 
 
 def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
