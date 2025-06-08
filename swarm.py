@@ -121,12 +121,14 @@ def propose_moves(ants, attackers, flag_pos, all_ants):
     """Return proposed new positions for ants."""
     proposed = []
     for i, (x, y) in enumerate(ants):
-        if i in attackers or flag_pos is None:
+        if flag_pos is None:
             proposed.append((x, y))
             continue
+
+        speed = 0.3 if i in attackers else 1.0
         vx, vy = compute_move_vector(x, y, flag_pos, all_ants)
-        nx = max(0, min(WIDTH - 1, x + vx))
-        ny = max(0, min(HEIGHT - 1, y + vy))
+        nx = max(0, min(WIDTH - 1, x + vx * speed))
+        ny = max(0, min(HEIGHT - 1, y + vy * speed))
         proposed.append((nx, ny))
     return proposed
 
