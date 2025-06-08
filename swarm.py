@@ -26,7 +26,8 @@ def lighten(color, factor=0.5):
 ANT_COLOR_RED_ENGAGED = lighten(ANT_COLOR_RED)
 ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
 # Color for the new circle-type ants
-ANT_COLOR_CIRCLE = (0, 255, 0)  # green
+# Color for the new archer-type ants (using red for now)
+ANT_COLOR_CIRCLE = (255, 0, 0)
 ANT_COLOR_CIRCLE_ENGAGED = lighten(ANT_COLOR_CIRCLE)
 
 # Flag types
@@ -52,7 +53,7 @@ flag_font = pygame.font.Font(None, 16)
 
 # Initialize ants for both players at random positions
 ants_red = []  # classic red ants
-ants_circle = []  # new circle-type ants
+ants_circle = []  # new semi-circle "archer" ants
 ants_blue = []
 occupied = set()
 def is_valid_position(x, y, others):
@@ -182,14 +183,29 @@ def resolve_positions(ants, proposed, killed, occupied_new):
     return new_ants
 
 
-def draw_ants(ants, color, engaged=None, engaged_color=None):
-    """Draw ants, highlighting engaged ones with a lighter color."""
+def draw_ants(ants, color, engaged=None, engaged_color=None, shape="circle"):
+    """Draw ants with optional shape, highlighting engaged ones with a lighter color."""
     for i, (x, y) in enumerate(ants):
         c = color
         if engaged and i in engaged:
             c = engaged_color if engaged_color else color
         center = (int(x), int(y))
-        pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
+        if shape == "semicircle":
+            radius = DOT_SIZE // 2
+            pygame.draw.circle(screen, c, center, radius)
+            pygame.draw.rect(
+                screen,
+                BACKGROUND_COLOR,
+                (center[0] - radius, center[1] - radius, radius, radius * 2),
+            )
+            pygame.draw.line(
+                screen,
+                c,
+                (center[0] - radius, center[1] - radius),
+                (center[0] - radius, center[1] + radius),
+            )
+        else:
+            pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
 
 
 def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
@@ -250,7 +266,7 @@ while len(ants_red) < NUM_ANTS_RED_CLASSIC:
         ants_red.append([x, y])
         occupied.add((x, y))
 
-# Place circle-type ants in the same area
+# Place archer ants in the same area
 while len(ants_circle) < NUM_ANTS_RED_CIRCLE:
     x = random.uniform(0, WIDTH * 0.25)
     y = random.uniform(HEIGHT * 0.75, HEIGHT)
@@ -351,6 +367,7 @@ while running:
         ANT_COLOR_CIRCLE,
         attackers_circle,
         ANT_COLOR_CIRCLE_ENGAGED,
+        shape="semicircle",
     )
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
@@ -363,7 +380,7 @@ while running:
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
-        f"Classic: {len(ants_red)}  Circle: {len(ants_circle)}  Blue: {len(ants_blue)}",
+        f"Classic: {len(ants_red)}  Archers: {len(ants_circle)}  Blue: {len(ants_blue)}",
         True,
         (255, 255, 255),
     )
@@ -373,7 +390,7 @@ while running:
     engaged_text = font.render(
         (
             f"Engaged - Classic: {len(attackers_red)}  "
-            f"Circle: {len(attackers_circle)}  Blue: {len(attackers_blue)}"
+            f"Archers: {len(attackers_circle)}  Blue: {len(attackers_blue)}"
         ),
         True,
         (255, 255, 255),
