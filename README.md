@@ -25,12 +25,14 @@ Execute the simulation using the provided helper script:
 ./run.sh
 ```
 
-Click anywhere in the window to place the target flag for the swarm. The
-simulation updates about 10 times per second and displays a small flag
-instead of a green square.
+Use the `1` and `2` keys to choose which red flag is active. The icons for the
+two flags are shown at the bottom of the window. The active flag is highlighted
+with a rectangle. Click anywhere to place the currently active flag. Press the
+`Delete` key to remove it. The simulation updates about 10 times per second and
+displays a small flag instead of a green square.
 
 ## Gameplay
 
 Each ant attacks the closest enemy within `ATTACK_RANGE` pixels (default `7`).
 An attack kills the target with probability defined by `KILL_PROBABILITY`
-(default `0.1`). Defeated ants are removed from the simulation.
+(default `0.02`). Defeated ants are removed from the simulation.
