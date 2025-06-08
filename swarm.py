@@ -192,6 +192,17 @@ def draw_flag(flag_pos, color, number=None):
         screen.blit(text, text_rect)
 
 
+def draw_flag_icon(idx, active=False):
+    """Draw numbered flag icons at the bottom and highlight the active one."""
+    spacing = FLAG_SIZE * 2 + 20
+    base_x = 20 + idx * spacing
+    base_y = HEIGHT - 5
+    draw_flag((base_x, base_y), FLAG_COLOR_RED, idx + 1)
+    if active:
+        rect = pygame.Rect(base_x - FLAG_SIZE - 4, base_y - 16, FLAG_SIZE + 12, FLAG_SIZE + 20)
+        pygame.draw.rect(screen, (255, 255, 0), rect, 1)
+
+
 # Place red ants in the lower-left corner (25% of the screen)
 while len(ants_red) < NUM_ANTS:
     x = random.uniform(0, WIDTH * 0.25)
@@ -209,7 +220,7 @@ while len(ants_blue) < NUM_ANTS_BLUE:
         occupied.add((x, y))
 
 flags_red = [None, None]
-next_flag_idx = 0
+active_flag_idx = 0
 flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
 next_flag_move = time.time() + random.uniform(5, 30)
 
@@ -218,9 +229,15 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1:
+                active_flag_idx = 0
+            elif event.key == pygame.K_2:
+                active_flag_idx = 1
+            elif event.key == pygame.K_DELETE:
+                flags_red[active_flag_idx] = None
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            flags_red[next_flag_idx] = event.pos
-            next_flag_idx = (next_flag_idx + 1) % len(flags_red)
+            flags_red[active_flag_idx] = event.pos
 
     # move the computer-controlled flag occasionally
     now = time.time()
@@ -253,6 +270,9 @@ while running:
     for idx, fpos in enumerate(flags_red, start=1):
         draw_flag(fpos, FLAG_COLOR_RED, idx)
     draw_flag(flag_pos_blue, FLAG_COLOR_BLUE)
+
+    for idx in range(len(flags_red)):
+        draw_flag_icon(idx, idx == active_flag_idx)
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
