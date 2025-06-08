@@ -32,7 +32,7 @@ FLAG_SIZE = 12
 DOT_SIZE = 2
 MIN_DISTANCE = 4  # minimum distance between ants in pixels
 ATTACK_RANGE = 9  # distance within which ants will attack instead of moving
-KILL_PROBABILITY = 0.1  # chance that an attack kills the target
+KILL_PROBABILITY = 0.02  # chance that an attack kills the target
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
