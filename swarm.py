@@ -36,6 +36,7 @@ ANT_COLOR_ARCHER_BLUE_ENGAGED = lighten(ANT_COLOR_ARCHER_BLUE)
 FLAG_TYPE_NORMAL = "normal"
 FLAG_TYPE_FAST = "fast"
 FLAG_TYPE_STOP = "stop"
+FLAG_TYPE_ARCHER = "archer"
 
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
@@ -243,6 +244,28 @@ def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
         )
         pygame.draw.rect(screen, color, rect1)
         pygame.draw.rect(screen, color, rect2)
+    elif flag_type == FLAG_TYPE_ARCHER:
+        flag_points = [
+            pole_top,
+            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
+            (pole_top[0], pole_top[1] + FLAG_SIZE),
+        ]
+        pygame.draw.polygon(screen, color, flag_points)
+        center = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE // 2)
+        pygame.draw.line(
+            screen,
+            FLAG_POLE_COLOR,
+            (center[0] - 3, center[1]),
+            (center[0] + 3, center[1]),
+            1,
+        )
+        pygame.draw.line(
+            screen,
+            FLAG_POLE_COLOR,
+            (center[0], center[1] - 3),
+            (center[0], center[1] + 3),
+            1,
+        )
     else:
         flag_points = [
             pole_top,
@@ -301,7 +324,7 @@ while len(ants_blue_archers) < NUM_ARCHERS_BLUE:
 
 flags_red = [
     {"pos": None, "type": FLAG_TYPE_NORMAL},
-    {"pos": None, "type": FLAG_TYPE_NORMAL},
+    {"pos": None, "type": FLAG_TYPE_ARCHER},
     {"pos": None, "type": FLAG_TYPE_FAST},
     {"pos": None, "type": FLAG_TYPE_STOP},
 ]
@@ -336,13 +359,16 @@ while running:
 
     all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
+    flags_for_footmen = [f for f in flags_red if f["type"] != FLAG_TYPE_ARCHER]
+    flags_for_archers = [f for f in flags_red if f["type"] != FLAG_TYPE_NORMAL]
+
     attackers_footmen, killed_blue_from_footmen = handle_attacks(
-        ants_footmen, ants_blue + ants_blue_archers, flags_red
+        ants_footmen, ants_blue + ants_blue_archers, flags_for_footmen
     )
     attackers_archers, killed_blue_from_archers = handle_attacks(
         ants_archers,
         ants_blue + ants_blue_archers,
-        flags_red,
+        flags_for_archers,
         attack_range=ARCHER_ATTACK_RANGE,
         kill_probability=ARCHER_KILL_PROBABILITY,
     )
@@ -365,9 +391,11 @@ while running:
     killed_footmen = {i for i in killed_red_all if i < len(ants_footmen)}
     killed_archers = {i - len(ants_footmen) for i in killed_red_all if i >= len(ants_footmen)}
 
-    proposed_footmen = propose_moves(ants_footmen, attackers_footmen, flags_red, all_ants)
+    proposed_footmen = propose_moves(
+        ants_footmen, attackers_footmen, flags_for_footmen, all_ants
+    )
     proposed_archers = propose_moves(
-        ants_archers, attackers_archers, flags_red, all_ants
+        ants_archers, attackers_archers, flags_for_archers, all_ants
     )
     proposed_blue = propose_moves(
         ants_blue,
