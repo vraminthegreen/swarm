@@ -13,6 +13,17 @@ NUM_ANTS_BLUE = 200
 ANT_COLOR_RED = (255, 0, 0)
 ANT_COLOR_BLUE = (0, 255, 255)  # cyan
 
+def lighten(color, factor=0.5):
+    """Return a lighter variant of the given RGB color."""
+    r, g, b = color
+    r = int(r + (255 - r) * factor)
+    g = int(g + (255 - g) * factor)
+    b = int(b + (255 - b) * factor)
+    return r, g, b
+
+ANT_COLOR_RED_ENGAGED = lighten(ANT_COLOR_RED)
+ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
+
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
@@ -135,10 +146,13 @@ def resolve_positions(ants, proposed, killed, occupied_new):
     return new_ants
 
 
-def draw_ants(ants, color):
-    """Draw ants with the specified color."""
-    for x, y in ants:
-        pygame.draw.rect(screen, color, (x, y, DOT_SIZE, DOT_SIZE))
+def draw_ants(ants, color, engaged=None, engaged_color=None):
+    """Draw ants, highlighting engaged ones with a lighter color."""
+    for i, (x, y) in enumerate(ants):
+        c = color
+        if engaged and i in engaged:
+            c = engaged_color if engaged_color else color
+        pygame.draw.rect(screen, c, (x, y, DOT_SIZE, DOT_SIZE))
 
 
 def draw_flag(flag_pos, color):
@@ -209,16 +223,28 @@ while running:
     ants_blue = [list(p) for p in new_ants_blue]
 
     screen.fill(BACKGROUND_COLOR)
-    draw_ants(ants_red, ANT_COLOR_RED)
-    draw_ants(ants_blue, ANT_COLOR_BLUE)
+    draw_ants(ants_red, ANT_COLOR_RED, attackers_red, ANT_COLOR_RED_ENGAGED)
+    draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
     draw_flag(flag_pos_red, FLAG_COLOR_RED)
     draw_flag(flag_pos_blue, FLAG_COLOR_BLUE)
 
     # Display remaining ant counts in the top-right corner
-    count_text = font.render(f"Red: {len(ants_red)}  Blue: {len(ants_blue)}", True, (255, 255, 255))
+    count_text = font.render(
+        f"Red: {len(ants_red)}  Blue: {len(ants_blue)}",
+        True,
+        (255, 255, 255),
+    )
     text_rect = count_text.get_rect(topright=(WIDTH - 5, 5))
     screen.blit(count_text, text_rect)
+
+    engaged_text = font.render(
+        f"Engaged - Red: {len(attackers_red)}  Blue: {len(attackers_blue)}",
+        True,
+        (255, 255, 255),
+    )
+    engaged_rect = engaged_text.get_rect(topright=(WIDTH - 5, 25))
+    screen.blit(engaged_text, engaged_rect)
 
     pygame.display.flip()
     clock.tick(20)
