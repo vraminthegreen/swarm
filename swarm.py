@@ -7,9 +7,10 @@ import math
 import time
 
 WIDTH, HEIGHT = 640, 480
-# Number of footmen and archer ants on the red team
+# Unit counts for each team
 NUM_FOOTMEN = 150
 NUM_ARCHERS = 50
+NUM_ARCHERS_BLUE = 50
 NUM_ANTS_BLUE = 200
 
 ANT_COLOR_RED = (255, 0, 0)
@@ -25,9 +26,11 @@ def lighten(color, factor=0.5):
 
 ANT_COLOR_RED_ENGAGED = lighten(ANT_COLOR_RED)
 ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
-# Color for the archer ants (using red for now)
+# Color for the archer ants
 ANT_COLOR_ARCHER = (255, 0, 0)
 ANT_COLOR_ARCHER_ENGAGED = lighten(ANT_COLOR_ARCHER)
+ANT_COLOR_ARCHER_BLUE = (0, 255, 255)
+ANT_COLOR_ARCHER_BLUE_ENGAGED = lighten(ANT_COLOR_ARCHER_BLUE)
 
 # Flag types
 FLAG_TYPE_NORMAL = "normal"
@@ -52,8 +55,9 @@ flag_font = pygame.font.Font(None, 16)
 
 # Initialize ants for both players at random positions
 ants_footmen = []  # footmen units
-ants_archers = []  # archer units displayed as semi-circles
-ants_blue = []
+ants_archers = []  # red archers displayed as semi-circles
+ants_blue = []  # blue footmen units
+ants_blue_archers = []  # blue archers displayed as semi-circles
 occupied = set()
 def is_valid_position(x, y, others):
     if not (0 <= x < WIDTH and 0 <= y < HEIGHT):
@@ -265,20 +269,28 @@ while len(ants_footmen) < NUM_FOOTMEN:
         ants_footmen.append([x, y])
         occupied.add((x, y))
 
-# Place archer ants in the same area
+# Place red archers in the upper-left corner
 while len(ants_archers) < NUM_ARCHERS:
     x = random.uniform(0, WIDTH * 0.25)
-    y = random.uniform(HEIGHT * 0.75, HEIGHT)
+    y = random.uniform(0, HEIGHT * 0.25)
     if is_valid_position(x, y, occupied):
         ants_archers.append([x, y])
         occupied.add((x, y))
 
-# Place blue ants in the upper-right corner (25% of the screen)
+# Place blue footmen in the upper-right corner (25% of the screen)
 while len(ants_blue) < NUM_ANTS_BLUE:
     x = random.uniform(WIDTH * 0.75, WIDTH)
     y = random.uniform(0, HEIGHT * 0.25)
     if is_valid_position(x, y, occupied):
         ants_blue.append([x, y])
+        occupied.add((x, y))
+
+# Place blue archers in the lower-right corner
+while len(ants_blue_archers) < NUM_ARCHERS_BLUE:
+    x = random.uniform(WIDTH * 0.75, WIDTH)
+    y = random.uniform(HEIGHT * 0.75, HEIGHT)
+    if is_valid_position(x, y, occupied):
+        ants_blue_archers.append([x, y])
         occupied.add((x, y))
 
 flags_red = [
@@ -316,20 +328,28 @@ while running:
         flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
         next_flag_move = now + random.uniform(5, 30)
 
-    all_ants = ants_footmen + ants_archers + ants_blue
+    all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
     attackers_footmen, killed_blue_from_footmen = handle_attacks(
-        ants_footmen, ants_blue, flags_red
+        ants_footmen, ants_blue + ants_blue_archers, flags_red
     )
     attackers_archers, killed_blue_from_archers = handle_attacks(
-        ants_archers, ants_blue, flags_red
+        ants_archers, ants_blue + ants_blue_archers, flags_red
     )
-    attackers_blue, killed_red_all = handle_attacks(
+    attackers_blue, killed_red_all_from_blue = handle_attacks(
         ants_blue,
         ants_footmen + ants_archers,
         [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
     )
-    killed_blue = killed_blue_from_footmen.union(killed_blue_from_archers)
+    attackers_blue_archers, killed_red_all_from_blue_archers = handle_attacks(
+        ants_blue_archers,
+        ants_footmen + ants_archers,
+        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+    )
+    killed_blue_all = killed_blue_from_footmen.union(killed_blue_from_archers)
+    killed_red_all = killed_red_all_from_blue.union(killed_red_all_from_blue_archers)
+    killed_blue = {i for i in killed_blue_all if i < len(ants_blue)}
+    killed_blue_archers = {i - len(ants_blue) for i in killed_blue_all if i >= len(ants_blue)}
     killed_footmen = {i for i in killed_red_all if i < len(ants_footmen)}
     killed_archers = {i - len(ants_footmen) for i in killed_red_all if i >= len(ants_footmen)}
 
@@ -343,10 +363,17 @@ while running:
         [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
         all_ants,
     )
+    proposed_blue_archers = propose_moves(
+        ants_blue_archers,
+        attackers_blue_archers,
+        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        all_ants,
+    )
 
     new_ants_footmen = []
     new_ants_archers = []
     new_ants_blue = []
+    new_ants_blue_archers = []
     occupied_new = []
 
     new_ants_footmen = resolve_positions(ants_footmen, proposed_footmen, killed_footmen, occupied_new)
@@ -354,10 +381,14 @@ while running:
         ants_archers, proposed_archers, killed_archers, occupied_new
     )
     new_ants_blue = resolve_positions(ants_blue, proposed_blue, killed_blue, occupied_new)
+    new_ants_blue_archers = resolve_positions(
+        ants_blue_archers, proposed_blue_archers, killed_blue_archers, occupied_new
+    )
 
     ants_footmen = [list(p) for p in new_ants_footmen]
     ants_archers = [list(p) for p in new_ants_archers]
     ants_blue = [list(p) for p in new_ants_blue]
+    ants_blue_archers = [list(p) for p in new_ants_blue_archers]
 
     screen.fill(BACKGROUND_COLOR)
     draw_ants(ants_footmen, ANT_COLOR_RED, attackers_footmen, ANT_COLOR_RED_ENGAGED)
@@ -366,6 +397,13 @@ while running:
         ANT_COLOR_ARCHER,
         attackers_archers,
         ANT_COLOR_ARCHER_ENGAGED,
+        shape="semicircle",
+    )
+    draw_ants(
+        ants_blue_archers,
+        ANT_COLOR_ARCHER_BLUE,
+        attackers_blue_archers,
+        ANT_COLOR_ARCHER_BLUE_ENGAGED,
         shape="semicircle",
     )
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
@@ -379,7 +417,10 @@ while running:
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
-        f"Footmen: {len(ants_footmen)}  Archers: {len(ants_archers)}  Blue: {len(ants_blue)}",
+        (
+            f"Footmen: {len(ants_footmen)}  Archers: {len(ants_archers)}  "
+            f"Blue Footmen: {len(ants_blue)}  Blue Archers: {len(ants_blue_archers)}"
+        ),
         True,
         (255, 255, 255),
     )
@@ -389,7 +430,9 @@ while running:
     engaged_text = font.render(
         (
             f"Engaged - Footmen: {len(attackers_footmen)}  "
-            f"Archers: {len(attackers_archers)}  Blue: {len(attackers_blue)}"
+            f"Archers: {len(attackers_archers)}  "
+            f"Blue Footmen: {len(attackers_blue)}  "
+            f"Blue Archers: {len(attackers_blue_archers)}"
         ),
         True,
         (255, 255, 255),
