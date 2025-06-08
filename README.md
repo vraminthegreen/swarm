@@ -25,10 +25,11 @@ Execute the simulation using the provided helper script:
 ./run.sh
 ```
 
-Use the `1` and `2` keys to choose which red flag is active. The icons for the
-two flags are shown at the bottom of the window. The active flag is highlighted
-with a rectangle. Click anywhere to place the currently active flag. Press the
-`Delete` key (or `Backspace` on macOS keyboards) to remove it. The simulation
+Use the `1`, `2` and `3` keys to choose which red flag is active. The icons for the
+three flags are shown at the bottom of the window. The active flag is highlighted
+with a rectangle. Flags 1 and 2 behave normally while flag 3 orders ants to move
+quickly (speed ×1.5) and disables their attacks. Click anywhere to place the currently
+active flag. Press the `Delete` key (or `Backspace` on macOS keyboards) to remove it. The simulation
 updates about 10 times per second and displays a small flag instead of a green
 square.
 

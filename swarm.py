@@ -24,6 +24,10 @@ def lighten(color, factor=0.5):
 ANT_COLOR_RED_ENGAGED = lighten(ANT_COLOR_RED)
 ANT_COLOR_BLUE_ENGAGED = lighten(ANT_COLOR_BLUE)
 
+# Flag types
+FLAG_TYPE_NORMAL = "normal"
+FLAG_TYPE_FAST = "fast"
+
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
@@ -105,11 +109,14 @@ def find_nearest_enemy(x, y, enemies):
     return None
 
 
-def handle_attacks(ants, enemies):
-    """Return sets of attackers and killed enemy indices."""
+def handle_attacks(ants, enemies, flags):
+    """Return sets of attackers and killed enemy indices considering flag types."""
     attackers = set()
     killed = set()
     for i, (x, y) in enumerate(ants):
+        flag = nearest_flag(x, y, flags)
+        if flag and flag["type"] == FLAG_TYPE_FAST:
+            continue  # cannot attack when heading to a fast flag
         target = find_nearest_enemy(x, y, enemies)
         if target is not None:
             attackers.add(i)
@@ -118,31 +125,34 @@ def handle_attacks(ants, enemies):
     return attackers, killed
 
 
-def nearest_flag_pos(x, y, flags):
-    """Return the closest defined flag position to (x, y)."""
-    best = None
-    best_d2 = float('inf')
-    for pos in flags:
+def nearest_flag(x, y, flags):
+    """Return the closest defined flag to (x, y)."""
+    best_flag = None
+    best_d2 = float("inf")
+    for flag in flags:
+        pos = flag["pos"]
         if pos is None:
             continue
         d2 = (pos[0] - x) ** 2 + (pos[1] - y) ** 2
         if d2 < best_d2:
             best_d2 = d2
-            best = pos
-    return best
+            best_flag = flag
+    return best_flag
 
 
-def propose_moves(ants, attackers, flag_positions, all_ants):
+def propose_moves(ants, attackers, flags, all_ants):
     """Return proposed new positions for ants based on nearest flag."""
     proposed = []
     for i, (x, y) in enumerate(ants):
-        flag_pos = nearest_flag_pos(x, y, flag_positions)
-        if flag_pos is None:
+        flag = nearest_flag(x, y, flags)
+        if flag is None:
             proposed.append((x, y))
             continue
 
-        speed = 0.3 if i in attackers else 1.0
-        vx, vy = compute_move_vector(x, y, flag_pos, all_ants)
+        speed_mult = 1.5 if flag["type"] == FLAG_TYPE_FAST else 1.0
+        speed = (0.3 if i in attackers else 1.0) * speed_mult
+
+        vx, vy = compute_move_vector(x, y, flag["pos"], all_ants)
         nx = max(0, min(WIDTH - 1, x + vx * speed))
         ny = max(0, min(HEIGHT - 1, y + vy * speed))
         proposed.append((nx, ny))
@@ -173,31 +183,42 @@ def draw_ants(ants, color, engaged=None, engaged_color=None):
         pygame.draw.rect(screen, c, (x, y, DOT_SIZE, DOT_SIZE))
 
 
-def draw_flag(flag_pos, color, number=None):
+def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
     """Draw a flag if its position is defined, optionally with a number."""
     if flag_pos is None:
         return
     fx, fy = flag_pos
     pole_top = (fx, max(0, fy - 10))
     pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos, pole_top)
-    flag_points = [
-        pole_top,
-        (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
-        (pole_top[0], pole_top[1] + FLAG_SIZE),
-    ]
-    pygame.draw.polygon(screen, color, flag_points)
+
+    if flag_type == FLAG_TYPE_FAST:
+        left1 = pole_top
+        right1 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE // 2)
+        bottom1 = (pole_top[0], pole_top[1] + FLAG_SIZE)
+        left2 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1])
+        right2 = (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2)
+        bottom2 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE)
+        pygame.draw.polygon(screen, color, [left1, right1, bottom1])
+        pygame.draw.polygon(screen, color, [left2, right2, bottom2])
+    else:
+        flag_points = [
+            pole_top,
+            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
+            (pole_top[0], pole_top[1] + FLAG_SIZE),
+        ]
+        pygame.draw.polygon(screen, color, flag_points)
     if number is not None:
         text = flag_font.render(str(number), True, (255, 255, 255))
         text_rect = text.get_rect(midleft=(pole_top[0] + FLAG_SIZE + 2, pole_top[1] + FLAG_SIZE // 2))
         screen.blit(text, text_rect)
 
 
-def draw_flag_icon(idx, active=False):
+def draw_flag_icon(idx, flag_type=FLAG_TYPE_NORMAL, active=False):
     """Draw numbered flag icons at the bottom and highlight the active one."""
     spacing = FLAG_SIZE * 2 + 20
     base_x = 20 + idx * spacing
     base_y = HEIGHT - 5
-    draw_flag((base_x, base_y), FLAG_COLOR_RED, idx + 1)
+    draw_flag((base_x, base_y), FLAG_COLOR_RED, idx + 1, flag_type)
     if active:
         rect = pygame.Rect(base_x - 4, base_y - 16, FLAG_SIZE + 12, FLAG_SIZE + 20)
         pygame.draw.rect(screen, (255, 255, 0), rect, 1)
@@ -219,7 +240,11 @@ while len(ants_blue) < NUM_ANTS_BLUE:
         ants_blue.append([x, y])
         occupied.add((x, y))
 
-flags_red = [None, None]
+flags_red = [
+    {"pos": None, "type": FLAG_TYPE_NORMAL},
+    {"pos": None, "type": FLAG_TYPE_NORMAL},
+    {"pos": None, "type": FLAG_TYPE_FAST},
+]
 active_flag_idx = 0
 flag_pos_blue = (random.uniform(0, WIDTH), random.uniform(0, HEIGHT))
 next_flag_move = time.time() + random.uniform(5, 30)
@@ -234,10 +259,12 @@ while running:
                 active_flag_idx = 0
             elif event.key == pygame.K_2:
                 active_flag_idx = 1
+            elif event.key == pygame.K_3:
+                active_flag_idx = 2
             elif event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
-                flags_red[active_flag_idx] = None
+                flags_red[active_flag_idx]["pos"] = None
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            flags_red[active_flag_idx] = event.pos
+            flags_red[active_flag_idx]["pos"] = event.pos
 
     # move the computer-controlled flag occasionally
     now = time.time()
@@ -247,11 +274,20 @@ while running:
 
     all_ants = ants_red + ants_blue
 
-    attackers_red, killed_blue = handle_attacks(ants_red, ants_blue)
-    attackers_blue, killed_red = handle_attacks(ants_blue, ants_red)
+    attackers_red, killed_blue = handle_attacks(ants_red, ants_blue, flags_red)
+    attackers_blue, killed_red = handle_attacks(
+        ants_blue,
+        ants_red,
+        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+    )
 
     proposed_red = propose_moves(ants_red, attackers_red, flags_red, all_ants)
-    proposed_blue = propose_moves(ants_blue, attackers_blue, [flag_pos_blue], all_ants)
+    proposed_blue = propose_moves(
+        ants_blue,
+        attackers_blue,
+        [{"pos": flag_pos_blue, "type": FLAG_TYPE_NORMAL}],
+        all_ants,
+    )
 
     new_ants_red = []
     new_ants_blue = []
@@ -267,12 +303,12 @@ while running:
     draw_ants(ants_red, ANT_COLOR_RED, attackers_red, ANT_COLOR_RED_ENGAGED)
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
-    for idx, fpos in enumerate(flags_red, start=1):
-        draw_flag(fpos, FLAG_COLOR_RED, idx)
+    for idx, flag in enumerate(flags_red, start=1):
+        draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
     draw_flag(flag_pos_blue, FLAG_COLOR_BLUE)
 
-    for idx in range(len(flags_red)):
-        draw_flag_icon(idx, idx == active_flag_idx)
+    for idx, flag in enumerate(flags_red):
+        draw_flag_icon(idx, flag["type"], idx == active_flag_idx)
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
