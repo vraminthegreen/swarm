@@ -1,6 +1,6 @@
 # Swarm Simulation
 
-This repository contains a simple Python program that simulates two swarms of ants competing over flags. Red ants are controlled by the player while blue ants follow an AI-controlled flag. When a swarm member spots an enemy within range it will attack instead of moving. Attacks have a small chance to remove the target, introducing a basic combat element.
+This repository contains a simple Python program that simulates two swarms of ants competing over flags. Red ants are controlled by the player while blue ants follow an AI-controlled flag. When a swarm member spots an enemy within range it will attack while still moving at a reduced speed (0.3). Attacks have a small chance to remove the target, introducing a basic combat element.
 
 ## Requirements
 
