@@ -6,6 +6,15 @@ import random
 import math
 import time
 
+from flag import (
+    Flag,
+    FLAG_TYPE_NORMAL,
+    FLAG_TYPE_FAST,
+    FLAG_TYPE_STOP,
+    FLAG_TYPE_ARCHER,
+    FLAG_SIZE,
+)
+
 WIDTH, HEIGHT = 640, 480
 # Unit counts for each team
 NUM_FOOTMEN = 150
@@ -32,11 +41,6 @@ ANT_COLOR_ARCHER_ENGAGED = lighten(ANT_COLOR_ARCHER)
 ANT_COLOR_ARCHER_BLUE = (0, 255, 255)
 ANT_COLOR_ARCHER_BLUE_ENGAGED = lighten(ANT_COLOR_ARCHER_BLUE)
 
-# Flag types
-FLAG_TYPE_NORMAL = "normal"
-FLAG_TYPE_FAST = "fast"
-FLAG_TYPE_STOP = "stop"
-FLAG_TYPE_ARCHER = "archer"
 
 # Control groups for player units
 GROUP_FOOTMEN = 1
@@ -45,8 +49,6 @@ GROUP_ARCHERS = 2
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
-FLAG_POLE_COLOR = (200, 200, 200)
-FLAG_SIZE = 12
 DOT_SIZE = 4
 MIN_DISTANCE = 4  # minimum distance between ants in pixels
 ATTACK_RANGE = 12  # distance within which footmen attack instead of moving
@@ -157,7 +159,7 @@ def handle_attacks(ants, enemies, flags, attack_range=ATTACK_RANGE, kill_probabi
     killed = set()
     for i, (x, y) in enumerate(ants):
         flag = nearest_flag(x, y, flags)
-        if flag and flag["type"] == FLAG_TYPE_FAST:
+        if flag and flag.flag_type == FLAG_TYPE_FAST:
             continue  # cannot attack when heading to a fast flag
         target = find_nearest_enemy(x, y, enemies, attack_range)
         if target is not None:
@@ -172,7 +174,7 @@ def nearest_flag(x, y, flags):
     best_flag = None
     best_d2 = float("inf")
     for flag in flags:
-        pos = flag["pos"]
+        pos = flag.pos
         if pos is None:
             continue
         d2 = (pos[0] - x) ** 2 + (pos[1] - y) ** 2
@@ -191,10 +193,10 @@ def propose_moves(ants, attackers, flags, all_ants):
             proposed.append((x, y))
             continue
 
-        speed_mult = 1.5 if flag["type"] == FLAG_TYPE_FAST else 1.0
+        speed_mult = 1.5 if flag.flag_type == FLAG_TYPE_FAST else 1.0
         speed = (0.3 if i in attackers else 1.0) * speed_mult
 
-        target_pos = (x, y) if flag["type"] == FLAG_TYPE_STOP else flag["pos"]
+        target_pos = (x, y) if flag.flag_type == FLAG_TYPE_STOP else flag.pos
         vx, vy = compute_move_vector(x, y, target_pos, all_ants)
         nx = max(0, min(WIDTH - 1, x + vx * speed))
         ny = max(0, min(HEIGHT - 1, y + vy * speed))
@@ -273,76 +275,6 @@ def draw_ants(ants, color, engaged=None, engaged_color=None, shape="circle"):
             pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
 
 
-def draw_flag(flag_pos, color, number=None, flag_type=FLAG_TYPE_NORMAL):
-    """Draw a flag if its position is defined, optionally with a number."""
-    if flag_pos is None:
-        return
-    fx, fy = flag_pos
-    pole_top = (fx, max(0, fy - 10))
-    pygame.draw.line(screen, FLAG_POLE_COLOR, flag_pos, pole_top)
-
-    if flag_type == FLAG_TYPE_FAST:
-        left1 = pole_top
-        right1 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE // 2)
-        bottom1 = (pole_top[0], pole_top[1] + FLAG_SIZE)
-        left2 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1])
-        right2 = (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2)
-        bottom2 = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE)
-        pygame.draw.polygon(screen, color, [left1, right1, bottom1])
-        pygame.draw.polygon(screen, color, [left2, right2, bottom2])
-    elif flag_type == FLAG_TYPE_STOP:
-        bar_height = 3
-        gap = 2
-        rect1 = pygame.Rect(pole_top[0], pole_top[1], FLAG_SIZE, bar_height)
-        rect2 = pygame.Rect(
-            pole_top[0], pole_top[1] + bar_height + gap, FLAG_SIZE, bar_height
-        )
-        pygame.draw.rect(screen, color, rect1)
-        pygame.draw.rect(screen, color, rect2)
-    elif flag_type == FLAG_TYPE_ARCHER:
-        flag_points = [
-            pole_top,
-            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
-            (pole_top[0], pole_top[1] + FLAG_SIZE),
-        ]
-        pygame.draw.polygon(screen, color, flag_points)
-        center = (pole_top[0] + FLAG_SIZE // 2, pole_top[1] + FLAG_SIZE // 2)
-        pygame.draw.line(
-            screen,
-            FLAG_POLE_COLOR,
-            (center[0] - 3, center[1]),
-            (center[0] + 3, center[1]),
-            1,
-        )
-        pygame.draw.line(
-            screen,
-            FLAG_POLE_COLOR,
-            (center[0], center[1] - 3),
-            (center[0], center[1] + 3),
-            1,
-        )
-    else:
-        flag_points = [
-            pole_top,
-            (pole_top[0] + FLAG_SIZE, pole_top[1] + FLAG_SIZE // 2),
-            (pole_top[0], pole_top[1] + FLAG_SIZE),
-        ]
-        pygame.draw.polygon(screen, color, flag_points)
-    if number is not None:
-        text = flag_font.render(str(number), True, (255, 255, 255))
-        text_rect = text.get_rect(midleft=(pole_top[0] + FLAG_SIZE + 2, pole_top[1] + FLAG_SIZE // 2))
-        screen.blit(text, text_rect)
-
-
-def draw_flag_icon(idx, flag_type=FLAG_TYPE_NORMAL, active=False):
-    """Draw numbered flag icons at the bottom and highlight the active one."""
-    spacing = FLAG_SIZE * 2 + 20
-    base_x = 20 + idx * spacing
-    base_y = HEIGHT - 5
-    draw_flag((base_x, base_y), FLAG_COLOR_RED, idx + 1, flag_type)
-    if active:
-        rect = pygame.Rect(base_x - 4, base_y - 16, FLAG_SIZE + 12, FLAG_SIZE + 20)
-        pygame.draw.rect(screen, (255, 255, 0), rect, 1)
 
 
 def draw_dashed_line(start_pos, end_pos, color=(200, 200, 200), dash_length=5):
@@ -364,13 +296,13 @@ def draw_dashed_line(start_pos, end_pos, color=(200, 200, 200), dash_length=5):
 
 
 def draw_flag_path(start_pos, flags):
-    """Draw dashed path from ``start_pos`` through the list of flags."""
+    """Draw dashed path from ``start_pos`` through the list of ``Flag`` objects."""
     current = start_pos
     for flag in flags:
-        if flag["pos"] is None:
+        if flag.pos is None:
             continue
-        draw_dashed_line(current, flag["pos"])
-        current = flag["pos"]
+        draw_dashed_line(current, flag.pos)
+        current = flag.pos
 
 
 # Place footmen in the lower-left corner (25% of the screen)
@@ -409,9 +341,11 @@ active_flag_idx = 0
 
 # Blue team alternates between footman and archer flags
 flags_blue = [
-    {"pos": (random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), "type": FLAG_TYPE_NORMAL},
-    {"pos": None, "type": FLAG_TYPE_ARCHER},
+    Flag((random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), FLAG_COLOR_BLUE, flag_type=FLAG_TYPE_NORMAL),
+    Flag(None, FLAG_COLOR_BLUE, flag_type=FLAG_TYPE_ARCHER),
 ]
+for f in flags_blue:
+    f.add()
 next_blue_flag_idx = 1
 next_blue_flag_move = time.time() + random.uniform(5, 20)
 
@@ -440,7 +374,7 @@ while running:
             removed = False
             for gid, queue in flag_queues.items():
                 for i, flag in enumerate(queue):
-                    fx, fy = flag["pos"]
+                    fx, fy = flag.pos
                     if math.hypot(fx - event.pos[0], fy - event.pos[1]) <= FLAG_SIZE:
                         queue.pop(i)
                         removed = True
@@ -452,12 +386,14 @@ while running:
                     flag_type = FLAG_TYPE_FAST
                 else:
                     flag_type = flag_templates[active_flag_idx]["type"]
-                flag_queues[active_group].append({"pos": event.pos, "type": flag_type})
+                new_flag = Flag(event.pos, FLAG_COLOR_RED, flag_type=flag_type)
+                new_flag.add()
+                flag_queues[active_group].append(new_flag)
 
     # move the computer-controlled flags alternately
     now = time.time()
     if now >= next_blue_flag_move:
-        flags_blue[next_blue_flag_idx]["pos"] = (
+        flags_blue[next_blue_flag_idx].pos = (
             random.uniform(0, WIDTH),
             random.uniform(0, HEIGHT),
         )
@@ -546,12 +482,12 @@ while running:
 
     flag_for_footmen = first_flag(flag_queues[GROUP_FOOTMEN])
     if flag_for_footmen and center_footmen is not None:
-        if math.hypot(center_footmen[0] - flag_for_footmen["pos"][0], center_footmen[1] - flag_for_footmen["pos"][1]) < FLAG_REACHED_DISTANCE:
+        if math.hypot(center_footmen[0] - flag_for_footmen.pos[0], center_footmen[1] - flag_for_footmen.pos[1]) < FLAG_REACHED_DISTANCE:
             flag_queues[GROUP_FOOTMEN].pop(0)
 
     flag_for_archers = first_flag(flag_queues[GROUP_ARCHERS])
     if flag_for_archers and center_archers is not None:
-        if math.hypot(center_archers[0] - flag_for_archers["pos"][0], center_archers[1] - flag_for_archers["pos"][1]) < FLAG_REACHED_DISTANCE:
+        if math.hypot(center_archers[0] - flag_for_archers.pos[0], center_archers[1] - flag_for_archers.pos[1]) < FLAG_REACHED_DISTANCE:
             flag_queues[GROUP_ARCHERS].pop(0)
 
     screen.fill(BACKGROUND_COLOR)
@@ -591,14 +527,20 @@ while running:
                 draw_flag_path(start_center, queue)
 
     for idx, flag in enumerate(flag_queues[GROUP_FOOTMEN], start=1):
-        draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
+        flag.number = idx
+        flag.color = FLAG_COLOR_RED
+        flag.draw(screen)
     for idx, flag in enumerate(flag_queues[GROUP_ARCHERS], start=1):
-        draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
+        flag.number = idx
+        flag.color = FLAG_COLOR_RED
+        flag.draw(screen)
     for flag in flags_blue:
-        draw_flag(flag["pos"], FLAG_COLOR_BLUE)
+        flag.draw(screen)
 
     for idx, template in enumerate(flag_templates):
-        draw_flag_icon(idx, template["type"], idx == active_flag_idx)
+        temp = Flag(None, FLAG_COLOR_RED, flag_type=template["type"])
+        temp.add()
+        temp.draw_icon(screen, idx, HEIGHT, idx == active_flag_idx)
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
