@@ -566,14 +566,15 @@ while running:
         ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS, active_group == GROUP_ARCHERS
     )
 
-    active_queue = flag_queues[active_group]
-    if active_queue:
-        if active_group == GROUP_FOOTMEN:
-            start_center = compute_centroid(ants_footmen)
-        else:
-            start_center = compute_centroid(ants_archers)
-        if start_center:
-            draw_flag_path(start_center, active_queue)
+    for group_id, ants in [
+        (GROUP_FOOTMEN, ants_footmen),
+        (GROUP_ARCHERS, ants_archers),
+    ]:
+        queue = flag_queues[group_id]
+        if queue:
+            start_center = compute_centroid(ants)
+            if start_center:
+                draw_flag_path(start_center, queue)
 
     for idx, flag in enumerate(flag_queues[GROUP_FOOTMEN], start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])

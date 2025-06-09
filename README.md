@@ -35,8 +35,9 @@ and flag 4 tells ants to stay put while still allowing them to attack. Click
 anywhere to append a new command to the selected group's queue. Each control group
 maintains its own list of commands executed in the order they were added. Press the
 `Delete` key to remove the most recently queued flag for the active group. Press
-`Backspace` to clear that group's queue. A dashed line shows the planned path from the
-targeted control group to each flag in its queue. The simulation
+`Backspace` to clear that group's queue. A dashed line shows the planned path from
+each control group to the flags in its queue so you can see orders for all groups
+at a glance. The simulation
 updates about 10 times per second and displays a small flag instead of a green
 square.
 Each control group also shows a small banner at its center of mass with the
