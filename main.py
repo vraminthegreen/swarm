@@ -3,9 +3,9 @@
 import pygame
 import sys
 import random
-import time
 
 from swarm import Swarm
+from ai_player import AIPlayer
 
 from flag import (
     Flag,
@@ -89,16 +89,6 @@ swarm_archers = Swarm(
 swarm_footmen.show()
 swarm_archers.show()
 
-# Swarms controlled by the AI
-swarm_blue_footmen = Swarm(ANT_COLOR_BLUE, 5, FLAG_COLOR_BLUE)
-swarm_blue_archers = Swarm(
-    ANT_COLOR_ARCHER_BLUE,
-    6,
-    FLAG_COLOR_BLUE,
-    shape="semicircle",
-)
-swarm_blue_footmen.show()
-swarm_blue_archers.show()
 
 # Queue of player-issued flags for each control group
 flag_queues = {
@@ -128,33 +118,17 @@ swarm_archers.spawn(
     occupied,
 )
 
-# Place blue footmen in the upper-right corner (25% of the screen)
-swarm_blue_footmen.spawn(
+# Initialize AI player after red units occupy the battlefield
+ai_player = AIPlayer(
+    WIDTH,
+    HEIGHT,
     NUM_ANTS_BLUE,
-    (WIDTH * 0.75, WIDTH),
-    (0, HEIGHT * 0.25),
-    occupied,
-)
-
-# Place blue archers in the lower-right corner
-swarm_blue_archers.spawn(
     NUM_ARCHERS_BLUE,
-    (WIDTH * 0.75, WIDTH),
-    (HEIGHT * 0.75, HEIGHT),
     occupied,
 )
+ai_player.show()
 
 active_flag_idx = 0
-
-# Blue team alternates between footman and archer flags
-flags_blue = [
-    NormalFlag((random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), FLAG_COLOR_BLUE),
-    ArcherFlag(None, FLAG_COLOR_BLUE),
-]
-for f in flags_blue:
-    f.show()
-next_blue_flag_idx = 1
-next_blue_flag_move = time.time() + random.uniform(5, 20)
 
 running = True
 print("[Swarm] starting")
@@ -191,20 +165,9 @@ while running:
                     flag_cls = flag_templates[active_flag_idx]["cls"]
                 flag_queues[active_group].add_flag_at(event.pos, flag_cls)
 
-    # move the computer-controlled flags alternately
-    now = time.time()
-    if now >= next_blue_flag_move:
-        flags_blue[next_blue_flag_idx].pos = (
-            random.uniform(0, WIDTH),
-            random.uniform(0, HEIGHT),
-        )
-        next_blue_flag_idx = 1 - next_blue_flag_idx
-        next_blue_flag_move = now + random.uniform(5, 20)
-
     swarm_footmen.tick(1.0)
     swarm_archers.tick(1.0)
-    swarm_blue_footmen.tick(1.0)
-    swarm_blue_archers.tick(1.0)
+    ai_player.tick(1.0)
 
     screen.fill(BACKGROUND_COLOR)
     swarm_footmen.engaged = set()
@@ -213,14 +176,9 @@ while running:
     swarm_archers.active = active_group == GROUP_ARCHERS
     swarm_footmen.draw(screen)
     swarm_archers.draw(screen)
-    swarm_blue_archers.engaged = set()
-    swarm_blue_footmen.engaged = set()
-    swarm_blue_archers.draw(screen)
-    swarm_blue_footmen.draw(screen)
-
-    # draw AI flags after swarms
-    for flag in flags_blue:
-        flag.draw(screen)
+    ai_player.swarm_archers.engaged = set()
+    ai_player.swarm_footmen.engaged = set()
+    ai_player.draw(screen)
 
     for idx, template in enumerate(flag_templates):
         temp = template["cls"](None, FLAG_COLOR_RED)
@@ -231,8 +189,8 @@ while running:
     count_text = font.render(
         (
             f"Footmen: {len(swarm_footmen.ants)}  Archers: {len(swarm_archers.ants)}  "
-            f"Blue Footmen: {len(swarm_blue_footmen.ants)}  "
-            f"Blue Archers: {len(swarm_blue_archers.ants)}"
+            f"Blue Footmen: {len(ai_player.swarm_footmen.ants)}  "
+            f"Blue Archers: {len(ai_player.swarm_archers.ants)}"
         ),
         True,
         (255, 255, 255),
