@@ -3,10 +3,8 @@
 import pygame
 import sys
 import random
-import math
 import time
 
-from order_queue import OrderQueue
 from swarm import Swarm
 
 from flag import (
@@ -110,93 +108,6 @@ flag_queues = {
 
 # Currently selected control group
 active_group = GROUP_FOOTMEN
-
-
-
-def compute_centroid(ants):
-    """Return the centroid of the given ants or None if empty."""
-    if not ants:
-        return None
-    x = sum(a[0] for a in ants) / len(ants)
-    y = sum(a[1] for a in ants) / len(ants)
-    return int(x), int(y)
-
-
-def first_flag(queue):
-    """Return the first flag in ``queue`` or ``None`` if empty."""
-    return queue[0] if queue else None
-
-
-def draw_group_banner(ants, color, number, active=False):
-    """Draw a small banner with the control group number at the group's center."""
-    center = compute_centroid(ants)
-    if center is None:
-        return
-    rect_width, rect_height = 14, 10
-    rect = pygame.Rect(
-        center[0] - rect_width // 2, center[1] - rect_height // 2, rect_width, rect_height
-    )
-    pygame.draw.rect(screen, color, rect)
-    pygame.draw.rect(screen, (255, 255, 255), rect, 1)
-    if active:
-        pygame.draw.rect(screen, (255, 255, 0), rect.inflate(4, 4), 1)
-    text = flag_font.render(str(number), True, (255, 255, 255))
-    text_rect = text.get_rect(center=center)
-    screen.blit(text, text_rect)
-
-def draw_ants(ants, color, engaged=None, engaged_color=None, shape="circle"):
-    """Draw ants with optional shape, highlighting engaged ones with a lighter color."""
-    for i, (x, y) in enumerate(ants):
-        c = color
-        if engaged and i in engaged:
-            c = engaged_color if engaged_color else color
-        center = (int(x), int(y))
-        if shape == "semicircle":
-            radius = DOT_SIZE // 2
-            pygame.draw.circle(screen, c, center, radius)
-            pygame.draw.rect(
-                screen,
-                BACKGROUND_COLOR,
-                (center[0] - radius, center[1] - radius, radius, radius * 2),
-            )
-            pygame.draw.line(
-                screen,
-                c,
-                (center[0] - radius, center[1] - radius),
-                (center[0] - radius, center[1] + radius),
-            )
-        else:
-            pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
-
-
-
-
-def draw_dashed_line(start_pos, end_pos, color=(200, 200, 200), dash_length=5):
-    """Draw a dashed line between two points."""
-    x1, y1 = start_pos
-    x2, y2 = end_pos
-    dx = x2 - x1
-    dy = y2 - y1
-    length = math.hypot(dx, dy)
-    if length == 0:
-        return
-    vx = dx / length
-    vy = dy / length
-    num_dashes = int(length // dash_length)
-    for i in range(0, num_dashes, 2):
-        start = (x1 + vx * i * dash_length, y1 + vy * i * dash_length)
-        end = (x1 + vx * min((i + 1) * dash_length, length), y1 + vy * min((i + 1) * dash_length, length))
-        pygame.draw.line(screen, color, start, end)
-
-
-def draw_flag_path(start_pos, flags):
-    """Draw dashed path from ``start_pos`` through the list of ``Flag`` objects."""
-    current = start_pos
-    for flag in flags:
-        if flag.pos is None:
-            continue
-        draw_dashed_line(current, flag.pos)
-        current = flag.pos
 
 occupied = set()
 
