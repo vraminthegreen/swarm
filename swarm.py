@@ -345,7 +345,7 @@ flags_blue = [
     ArcherFlag(None, FLAG_COLOR_BLUE),
 ]
 for f in flags_blue:
-    f.add()
+    f.show()
 next_blue_flag_idx = 1
 next_blue_flag_move = time.time() + random.uniform(5, 20)
 
@@ -387,7 +387,7 @@ while running:
                 else:
                     flag_cls = flag_templates[active_flag_idx]["cls"]
                 new_flag = flag_cls(event.pos, FLAG_COLOR_RED)
-                new_flag.add()
+                new_flag.show()
                 flag_queues[active_group].append(new_flag)
 
     # move the computer-controlled flags alternately
@@ -539,7 +539,7 @@ while running:
 
     for idx, template in enumerate(flag_templates):
         temp = template["cls"](None, FLAG_COLOR_RED)
-        temp.add()
+        temp.show()
         temp.draw_icon(screen, idx, HEIGHT, idx == active_flag_idx)
 
     # Display remaining ant counts in the top-right corner
