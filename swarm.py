@@ -424,9 +424,11 @@ while running:
                 active_flag_idx = 2
             elif event.key == pygame.K_4:
                 active_flag_idx = 3
-            elif event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
+            elif event.key == pygame.K_DELETE:
                 if flag_queue:
                     flag_queue.pop()
+            elif event.key == pygame.K_BACKSPACE:
+                flag_queue.clear()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             template = flag_templates[active_flag_idx]
             flag_queue.append({"pos": event.pos, "type": template["type"], "group": template["group"]})
@@ -563,8 +565,16 @@ while running:
     draw_group_banner(ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN)
     draw_group_banner(ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS)
 
-    if center_all and flag_queue:
-        draw_flag_path(center_all, flag_queue)
+    if flag_queue:
+        first_group = flag_queue[0].get("group")
+        if first_group == GROUP_FOOTMEN:
+            start_center = compute_centroid(ants_footmen)
+        elif first_group == GROUP_ARCHERS:
+            start_center = compute_centroid(ants_archers)
+        else:
+            start_center = center_all
+        if start_center:
+            draw_flag_path(start_center, flag_queue)
 
     for idx, flag in enumerate(flag_queue, start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])

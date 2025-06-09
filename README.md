@@ -33,9 +33,9 @@ archers in group `2`. Flag 1 controls only group `1`, flag 2 controls only group
 `2`, flag 3 orders units to move quickly (speed ×1.5) and disables their attacks,
 and flag 4 tells ants to stay put while still allowing them to attack. Click
 anywhere to append a new command to the queue. Commands are executed in the
-order they were added. Press the `Delete` key (or `Backspace` on macOS
-keyboards) to remove the most recently queued flag. A dashed line shows the
-planned path from the controlled group to each flag in the queue. The simulation
+order they were added. Press the `Delete` key to remove the most recently
+queued flag. Press `Backspace` to clear all queued flags. A dashed line shows the
+planned path from the targeted control group to each flag in the queue. The simulation
 updates about 10 times per second and displays a small flag instead of a green
 square.
 Each control group also shows a small banner at its center of mass with the
