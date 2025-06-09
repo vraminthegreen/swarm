@@ -69,14 +69,20 @@ flag_font = pygame.font.Font(None, 16)
 
 # Templates for creating new flags via the command queue
 flag_templates = [
-    {"type": FLAG_TYPE_NORMAL, "group": GROUP_FOOTMEN},
-    {"type": FLAG_TYPE_NORMAL, "group": GROUP_ARCHERS},
-    {"type": FLAG_TYPE_FAST, "group": None},
-    {"type": FLAG_TYPE_STOP, "group": None},
+    {"type": FLAG_TYPE_NORMAL},
+    {"type": FLAG_TYPE_NORMAL},
+    {"type": FLAG_TYPE_FAST},
+    {"type": FLAG_TYPE_STOP},
 ]
 
-# Queue of player-issued flags (commands)
-flag_queue = []
+# Queue of player-issued flags for each control group
+flag_queues = {
+    GROUP_FOOTMEN: [],
+    GROUP_ARCHERS: [],
+}
+
+# Currently selected control group
+active_group = GROUP_FOOTMEN
 
 # Initialize ants for both players at random positions
 ants_footmen = []  # footmen units
@@ -220,15 +226,12 @@ def compute_centroid(ants):
     return int(x), int(y)
 
 
-def first_flag_for_group(queue, group):
-    """Return the first flag in ``queue`` applicable to ``group``."""
-    for flag in queue:
-        if flag.get("group") in (group, None):
-            return flag
-    return None
+def first_flag(queue):
+    """Return the first flag in ``queue`` or ``None`` if empty."""
+    return queue[0] if queue else None
 
 
-def draw_group_banner(ants, color, number):
+def draw_group_banner(ants, color, number, active=False):
     """Draw a small banner with the control group number at the group's center."""
     center = compute_centroid(ants)
     if center is None:
@@ -239,6 +242,8 @@ def draw_group_banner(ants, color, number):
     )
     pygame.draw.rect(screen, color, rect)
     pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+    if active:
+        pygame.draw.rect(screen, (255, 255, 0), rect.inflate(4, 4), 1)
     text = flag_font.render(str(number), True, (255, 255, 255))
     text_rect = text.get_rect(center=center)
     screen.blit(text, text_rect)
@@ -418,20 +423,22 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
                 active_flag_idx = 0
+                active_group = GROUP_FOOTMEN
             elif event.key == pygame.K_2:
                 active_flag_idx = 1
+                active_group = GROUP_ARCHERS
             elif event.key == pygame.K_3:
                 active_flag_idx = 2
             elif event.key == pygame.K_4:
                 active_flag_idx = 3
             elif event.key == pygame.K_DELETE:
-                if flag_queue:
-                    flag_queue.pop()
+                if flag_queues[active_group]:
+                    flag_queues[active_group].pop()
             elif event.key == pygame.K_BACKSPACE:
-                flag_queue.clear()
+                flag_queues[active_group].clear()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             template = flag_templates[active_flag_idx]
-            flag_queue.append({"pos": event.pos, "type": template["type"], "group": template["group"]})
+            flag_queues[active_group].append({"pos": event.pos, "type": template["type"]})
 
     # move the computer-controlled flags alternately
     now = time.time()
@@ -445,8 +452,8 @@ while running:
 
     all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
-    flag_for_footmen = first_flag_for_group(flag_queue, GROUP_FOOTMEN)
-    flag_for_archers = first_flag_for_group(flag_queue, GROUP_ARCHERS)
+    flag_for_footmen = first_flag(flag_queues[GROUP_FOOTMEN])
+    flag_for_archers = first_flag(flag_queues[GROUP_ARCHERS])
 
     flags_for_footmen = [flag_for_footmen] if flag_for_footmen else []
     flags_for_archers = [flag_for_archers] if flag_for_archers else []
@@ -522,26 +529,16 @@ while running:
     # remove flags that have been reached
     center_footmen = compute_centroid(ants_footmen)
     center_archers = compute_centroid(ants_archers)
-    center_all = compute_centroid(ants_footmen + ants_archers)
 
-    flag_for_footmen = first_flag_for_group(flag_queue, GROUP_FOOTMEN)
+    flag_for_footmen = first_flag(flag_queues[GROUP_FOOTMEN])
     if flag_for_footmen and center_footmen is not None:
         if math.hypot(center_footmen[0] - flag_for_footmen["pos"][0], center_footmen[1] - flag_for_footmen["pos"][1]) < FLAG_REACHED_DISTANCE:
-            if flag_for_footmen in flag_queue:
-                flag_queue.remove(flag_for_footmen)
+            flag_queues[GROUP_FOOTMEN].pop(0)
 
-    flag_for_archers = first_flag_for_group(flag_queue, GROUP_ARCHERS)
+    flag_for_archers = first_flag(flag_queues[GROUP_ARCHERS])
     if flag_for_archers and center_archers is not None:
         if math.hypot(center_archers[0] - flag_for_archers["pos"][0], center_archers[1] - flag_for_archers["pos"][1]) < FLAG_REACHED_DISTANCE:
-            if flag_for_archers in flag_queue:
-                flag_queue.remove(flag_for_archers)
-
-    # handle flags that apply to all groups
-    flag_for_all = first_flag_for_group(flag_queue, None)
-    if flag_for_all and center_all is not None and flag_for_all.get("group") is None:
-        if math.hypot(center_all[0] - flag_for_all["pos"][0], center_all[1] - flag_for_all["pos"][1]) < FLAG_REACHED_DISTANCE:
-            if flag_for_all in flag_queue:
-                flag_queue.remove(flag_for_all)
+            flag_queues[GROUP_ARCHERS].pop(0)
 
     screen.fill(BACKGROUND_COLOR)
     draw_ants(ants_footmen, ANT_COLOR_RED, attackers_footmen, ANT_COLOR_RED_ENGAGED)
@@ -562,21 +559,25 @@ while running:
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
     # control group banners for player units
-    draw_group_banner(ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN)
-    draw_group_banner(ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS)
+    draw_group_banner(
+        ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN, active_group == GROUP_FOOTMEN
+    )
+    draw_group_banner(
+        ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS, active_group == GROUP_ARCHERS
+    )
 
-    if flag_queue:
-        first_group = flag_queue[0].get("group")
-        if first_group == GROUP_FOOTMEN:
+    active_queue = flag_queues[active_group]
+    if active_queue:
+        if active_group == GROUP_FOOTMEN:
             start_center = compute_centroid(ants_footmen)
-        elif first_group == GROUP_ARCHERS:
-            start_center = compute_centroid(ants_archers)
         else:
-            start_center = center_all
+            start_center = compute_centroid(ants_archers)
         if start_center:
-            draw_flag_path(start_center, flag_queue)
+            draw_flag_path(start_center, active_queue)
 
-    for idx, flag in enumerate(flag_queue, start=1):
+    for idx, flag in enumerate(flag_queues[GROUP_FOOTMEN], start=1):
+        draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
+    for idx, flag in enumerate(flag_queues[GROUP_ARCHERS], start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
     for flag in flags_blue:
         draw_flag(flag["pos"], FLAG_COLOR_BLUE)
