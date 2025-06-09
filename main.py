@@ -7,6 +7,7 @@ import math
 import time
 
 from order_queue import OrderQueue
+from swarm import Swarm
 
 from flag import (
     Flag,
@@ -79,21 +80,22 @@ flag_templates = [
     {"cls": StopFlag},
 ]
 
+# Swarms controlled by the player
+swarm_footmen = Swarm(ANT_COLOR_RED, GROUP_FOOTMEN, FLAG_COLOR_RED)
+swarm_archers = Swarm(ANT_COLOR_ARCHER, GROUP_ARCHERS, FLAG_COLOR_RED, shape="semicircle")
+swarm_footmen.show()
+swarm_archers.show()
+
 # Queue of player-issued flags for each control group
 flag_queues = {
-    GROUP_FOOTMEN: OrderQueue(),
-    GROUP_ARCHERS: OrderQueue(),
+    GROUP_FOOTMEN: swarm_footmen.queue,
+    GROUP_ARCHERS: swarm_archers.queue,
 }
-flag_queues[GROUP_FOOTMEN].show()
-flag_queues[GROUP_ARCHERS].show()
-
 
 # Currently selected control group
 active_group = GROUP_FOOTMEN
 
 # Initialize ants for both players at random positions
-ants_footmen = []  # footmen units
-ants_archers = []  # red archers displayed as semi-circles
 ants_blue = []  # blue footmen units
 ants_blue_archers = []  # blue archers displayed as semi-circles
 occupied = set()
@@ -311,20 +313,20 @@ def draw_flag_path(start_pos, flags):
 
 
 # Place footmen in the lower-left corner (25% of the screen)
-while len(ants_footmen) < NUM_FOOTMEN:
-    x = random.uniform(0, WIDTH * 0.25)
-    y = random.uniform(HEIGHT * 0.75, HEIGHT)
-    if is_valid_position(x, y, occupied):
-        ants_footmen.append([x, y])
-        occupied.add((x, y))
+swarm_footmen.spawn(
+    NUM_FOOTMEN,
+    (0, WIDTH * 0.25),
+    (HEIGHT * 0.75, HEIGHT),
+    occupied,
+)
 
 # Place red archers in the upper-left corner
-while len(ants_archers) < NUM_ARCHERS:
-    x = random.uniform(0, WIDTH * 0.25)
-    y = random.uniform(0, HEIGHT * 0.25)
-    if is_valid_position(x, y, occupied):
-        ants_archers.append([x, y])
-        occupied.add((x, y))
+swarm_archers.spawn(
+    NUM_ARCHERS,
+    (0, WIDTH * 0.25),
+    (0, HEIGHT * 0.25),
+    occupied,
+)
 
 # Place blue footmen in the upper-right corner (25% of the screen)
 while len(ants_blue) < NUM_ANTS_BLUE:
@@ -399,19 +401,19 @@ while running:
         next_blue_flag_idx = 1 - next_blue_flag_idx
         next_blue_flag_move = now + random.uniform(5, 20)
 
-    all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
+    all_ants = swarm_footmen.ants + swarm_archers.ants + ants_blue + ants_blue_archers
 
-    flag_for_footmen = first_flag(flag_queues[GROUP_FOOTMEN])
-    flag_for_archers = first_flag(flag_queues[GROUP_ARCHERS])
+    flag_for_footmen = swarm_footmen.first_flag()
+    flag_for_archers = swarm_archers.first_flag()
 
     flags_for_footmen = [flag_for_footmen] if flag_for_footmen else []
     flags_for_archers = [flag_for_archers] if flag_for_archers else []
 
     attackers_footmen, killed_blue_from_footmen = handle_attacks(
-        ants_footmen, ants_blue + ants_blue_archers, flags_for_footmen
+        swarm_footmen.ants, ants_blue + ants_blue_archers, flags_for_footmen
     )
     attackers_archers, killed_blue_from_archers = handle_attacks(
-        ants_archers,
+        swarm_archers.ants,
         ants_blue + ants_blue_archers,
         flags_for_archers,
         attack_range=ARCHER_ATTACK_RANGE,
@@ -419,12 +421,12 @@ while running:
     )
     attackers_blue, killed_red_all_from_blue = handle_attacks(
         ants_blue,
-        ants_footmen + ants_archers,
+        swarm_footmen.ants + swarm_archers.ants,
         [flags_blue[0]],
     )
     attackers_blue_archers, killed_red_all_from_blue_archers = handle_attacks(
         ants_blue_archers,
-        ants_footmen + ants_archers,
+        swarm_footmen.ants + swarm_archers.ants,
         [flags_blue[1]],
         attack_range=ARCHER_ATTACK_RANGE,
         kill_probability=ARCHER_KILL_PROBABILITY,
@@ -433,14 +435,14 @@ while running:
     killed_red_all = killed_red_all_from_blue.union(killed_red_all_from_blue_archers)
     killed_blue = {i for i in killed_blue_all if i < len(ants_blue)}
     killed_blue_archers = {i - len(ants_blue) for i in killed_blue_all if i >= len(ants_blue)}
-    killed_footmen = {i for i in killed_red_all if i < len(ants_footmen)}
-    killed_archers = {i - len(ants_footmen) for i in killed_red_all if i >= len(ants_footmen)}
+    killed_footmen = {i for i in killed_red_all if i < len(swarm_footmen.ants)}
+    killed_archers = {i - len(swarm_footmen.ants) for i in killed_red_all if i >= len(swarm_footmen.ants)}
 
     proposed_footmen = propose_moves(
-        ants_footmen, attackers_footmen, flags_for_footmen, all_ants
+        swarm_footmen.ants, attackers_footmen, flags_for_footmen, all_ants
     )
     proposed_archers = propose_moves(
-        ants_archers, attackers_archers, flags_for_archers, all_ants
+        swarm_archers.ants, attackers_archers, flags_for_archers, all_ants
     )
     proposed_blue = propose_moves(
         ants_blue,
@@ -461,43 +463,41 @@ while running:
     new_ants_blue_archers = []
     occupied_new = []
 
-    new_ants_footmen = resolve_positions(ants_footmen, proposed_footmen, killed_footmen, occupied_new)
+    new_ants_footmen = resolve_positions(swarm_footmen.ants, proposed_footmen, killed_footmen, occupied_new)
     new_ants_archers = resolve_positions(
-        ants_archers, proposed_archers, killed_archers, occupied_new
+        swarm_archers.ants, proposed_archers, killed_archers, occupied_new
     )
     new_ants_blue = resolve_positions(ants_blue, proposed_blue, killed_blue, occupied_new)
     new_ants_blue_archers = resolve_positions(
         ants_blue_archers, proposed_blue_archers, killed_blue_archers, occupied_new
     )
 
-    ants_footmen = [list(p) for p in new_ants_footmen]
-    ants_archers = [list(p) for p in new_ants_archers]
+    swarm_footmen.ants = [list(p) for p in new_ants_footmen]
+    swarm_archers.ants = [list(p) for p in new_ants_archers]
     ants_blue = [list(p) for p in new_ants_blue]
     ants_blue_archers = [list(p) for p in new_ants_blue_archers]
 
     # remove flags that have been reached
-    center_footmen = compute_centroid(ants_footmen)
-    center_archers = compute_centroid(ants_archers)
+    center_footmen = swarm_footmen.compute_centroid()
+    center_archers = swarm_archers.compute_centroid()
 
-    flag_for_footmen = first_flag(flag_queues[GROUP_FOOTMEN])
+    flag_for_footmen = swarm_footmen.first_flag()
     if flag_for_footmen and center_footmen is not None:
         if math.hypot(center_footmen[0] - flag_for_footmen.pos[0], center_footmen[1] - flag_for_footmen.pos[1]) < FLAG_REACHED_DISTANCE:
             flag_queues[GROUP_FOOTMEN].pop(0)
 
-    flag_for_archers = first_flag(flag_queues[GROUP_ARCHERS])
+    flag_for_archers = swarm_archers.first_flag()
     if flag_for_archers and center_archers is not None:
         if math.hypot(center_archers[0] - flag_for_archers.pos[0], center_archers[1] - flag_for_archers.pos[1]) < FLAG_REACHED_DISTANCE:
             flag_queues[GROUP_ARCHERS].pop(0)
 
     screen.fill(BACKGROUND_COLOR)
-    draw_ants(ants_footmen, ANT_COLOR_RED, attackers_footmen, ANT_COLOR_RED_ENGAGED)
-    draw_ants(
-        ants_archers,
-        ANT_COLOR_ARCHER,
-        attackers_archers,
-        ANT_COLOR_ARCHER_ENGAGED,
-        shape="semicircle",
-    )
+    swarm_footmen.engaged = attackers_footmen
+    swarm_archers.engaged = attackers_archers
+    swarm_footmen.active = active_group == GROUP_FOOTMEN
+    swarm_archers.active = active_group == GROUP_ARCHERS
+    swarm_footmen.draw(screen)
+    swarm_archers.draw(screen)
     draw_ants(
         ants_blue_archers,
         ANT_COLOR_ARCHER_BLUE,
@@ -507,32 +507,7 @@ while running:
     )
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
 
-    # control group banners for player units
-    draw_group_banner(
-        ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN, active_group == GROUP_FOOTMEN
-    )
-    draw_group_banner(
-        ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS, active_group == GROUP_ARCHERS
-    )
-
-    for group_id, ants in [
-        (GROUP_FOOTMEN, ants_footmen),
-        (GROUP_ARCHERS, ants_archers),
-    ]:
-        queue = flag_queues[group_id]
-        if queue:
-            start_center = compute_centroid(ants)
-            if start_center:
-                draw_flag_path(start_center, queue)
-
-    for idx, flag in enumerate(flag_queues[GROUP_FOOTMEN], start=1):
-        flag.number = idx
-        flag.color = FLAG_COLOR_RED
-        flag.draw(screen)
-    for idx, flag in enumerate(flag_queues[GROUP_ARCHERS], start=1):
-        flag.number = idx
-        flag.color = FLAG_COLOR_RED
-        flag.draw(screen)
+    # draw AI flags after swarms
     for flag in flags_blue:
         flag.draw(screen)
 
@@ -544,7 +519,7 @@ while running:
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
         (
-            f"Footmen: {len(ants_footmen)}  Archers: {len(ants_archers)}  "
+            f"Footmen: {len(swarm_footmen.ants)}  Archers: {len(swarm_archers.ants)}  "
             f"Blue Footmen: {len(ants_blue)}  Blue Archers: {len(ants_blue_archers)}"
         ),
         True,
