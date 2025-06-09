@@ -257,7 +257,7 @@ class Swarm(Stage):
         self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
 
         center = self.compute_centroid()
-        if flag and center is not None:
+        if flag and flag.pos is not None and center is not None:
             if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
                 self.queue.pop(0)
 
