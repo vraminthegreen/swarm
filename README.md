@@ -27,12 +27,14 @@ Execute the simulation using the provided helper script:
 
 Use the `1`, `2`, `3` and `4` keys to choose which red flag is active. The icons for the
 four flags are shown at the bottom of the window. The active flag is highlighted
-with a rectangle. Flag 1 is a standard footman flag, flag 2 commands only archers,
-flag 3 orders units to move quickly (speed ×1.5) and disables their attacks. Flag 4 tells ants to stay put while still
-allowing them to attack. Click anywhere to place the currently
-active flag. Press the `Delete` key (or `Backspace` on macOS keyboards) to remove it. The simulation
-updates about 10 times per second and displays a small flag instead of a green
-square.
+with a rectangle. Control groups allow commands to target subsets of your army.
+Groups are numbered from `1` to `9`; by default footmen are in group `1` and
+archers in group `2`. Flag 1 controls only group `1`, flag 2 controls only group
+`2`, flag 3 orders units to move quickly (speed ×1.5) and disables their attacks,
+and flag 4 tells ants to stay put while still allowing them to attack. Click
+anywhere to place the currently active flag. Press the `Delete` key (or
+`Backspace` on macOS keyboards) to remove it. The simulation updates about 10
+times per second and displays a small flag instead of a green square.
 
 ## Gameplay
 

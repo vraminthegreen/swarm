@@ -38,6 +38,10 @@ FLAG_TYPE_FAST = "fast"
 FLAG_TYPE_STOP = "stop"
 FLAG_TYPE_ARCHER = "archer"
 
+# Control groups for player units
+GROUP_FOOTMEN = 1
+GROUP_ARCHERS = 2
+
 BACKGROUND_COLOR = (0, 0, 0)
 FLAG_COLOR_RED = (255, 100, 100)  # light red
 FLAG_COLOR_BLUE = (0, 255, 255)  # cyan flag
@@ -323,10 +327,10 @@ while len(ants_blue_archers) < NUM_ARCHERS_BLUE:
         occupied.add((x, y))
 
 flags_red = [
-    {"pos": None, "type": FLAG_TYPE_NORMAL},
-    {"pos": None, "type": FLAG_TYPE_ARCHER},
-    {"pos": None, "type": FLAG_TYPE_FAST},
-    {"pos": None, "type": FLAG_TYPE_STOP},
+    {"pos": None, "type": FLAG_TYPE_NORMAL, "group": GROUP_FOOTMEN},
+    {"pos": None, "type": FLAG_TYPE_NORMAL, "group": GROUP_ARCHERS},
+    {"pos": None, "type": FLAG_TYPE_FAST, "group": None},
+    {"pos": None, "type": FLAG_TYPE_STOP, "group": None},
 ]
 active_flag_idx = 0
 
@@ -369,8 +373,12 @@ while running:
 
     all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
-    flags_for_footmen = [f for f in flags_red if f["type"] != FLAG_TYPE_ARCHER]
-    flags_for_archers = [f for f in flags_red if f["type"] != FLAG_TYPE_NORMAL]
+    flags_for_footmen = [
+        f for f in flags_red if f.get("group") in (GROUP_FOOTMEN, None)
+    ]
+    flags_for_archers = [
+        f for f in flags_red if f.get("group") in (GROUP_ARCHERS, None)
+    ]
 
     attackers_footmen, killed_blue_from_footmen = handle_attacks(
         ants_footmen, ants_blue + ants_blue_archers, flags_for_footmen
