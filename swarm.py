@@ -437,8 +437,19 @@ while running:
             elif event.key == pygame.K_BACKSPACE:
                 flag_queues[active_group].clear()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            template = flag_templates[active_flag_idx]
-            flag_queues[active_group].append({"pos": event.pos, "type": template["type"]})
+            removed = False
+            for gid, queue in flag_queues.items():
+                for i, flag in enumerate(queue):
+                    fx, fy = flag["pos"]
+                    if math.hypot(fx - event.pos[0], fy - event.pos[1]) <= FLAG_SIZE:
+                        queue.pop(i)
+                        removed = True
+                        break
+                if removed:
+                    break
+            if not removed:
+                template = flag_templates[active_flag_idx]
+                flag_queues[active_group].append({"pos": event.pos, "type": template["type"]})
 
     # move the computer-controlled flags alternately
     now = time.time()
