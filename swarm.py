@@ -59,7 +59,7 @@ ARCHER_ATTACK_RANGE = 60
 ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
 
 # Distance threshold to consider a flag reached
-FLAG_REACHED_DISTANCE = 10
+FLAG_REACHED_DISTANCE = 40
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
