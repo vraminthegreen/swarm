@@ -18,6 +18,13 @@ class OrderQueue(Stage):
         self._queue.append(flag)
         self.add_stage(flag)
 
+    def add_flag_at(self, pos, flag_cls=Flag):
+        """Create a new flag instance at ``pos`` and append it."""
+        flag = flag_cls(pos)
+        flag.show()
+        self.add_flag(flag)
+        return flag
+
     def pop(self, index=-1):
         """Remove and return a flag from the queue."""
         if not self._queue:

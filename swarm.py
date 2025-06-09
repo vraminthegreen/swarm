@@ -373,24 +373,17 @@ while running:
             elif event.key == pygame.K_BACKSPACE:
                 flag_queues[active_group].clear()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            removed = False
-            for gid, queue in flag_queues.items():
-                for i, flag in enumerate(queue):
-                    fx, fy = flag.pos
-                    if math.hypot(fx - event.pos[0], fy - event.pos[1]) <= FLAG_SIZE:
-                        queue.pop(i)
-                        removed = True
-                        break
-                if removed:
+            handled = False
+            for queue in flag_queues.values():
+                if queue.handleEvent(event):
+                    handled = True
                     break
-            if not removed:
+            if not handled:
                 if pygame.key.get_mods() & pygame.KMOD_SHIFT:
                     flag_cls = FastFlag
                 else:
                     flag_cls = flag_templates[active_flag_idx]["cls"]
-                new_flag = flag_cls(event.pos, FLAG_COLOR_RED)
-                new_flag.show()
-                flag_queues[active_group].add_flag(new_flag)
+                flag_queues[active_group].add_flag_at(event.pos, flag_cls)
 
     # move the computer-controlled flags alternately
     now = time.time()
