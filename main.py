@@ -111,133 +111,6 @@ flag_queues = {
 # Currently selected control group
 active_group = GROUP_FOOTMEN
 
-# Initialize ants for all swarms at random positions
-occupied = set()
-def is_valid_position(x, y, others):
-    if not (0 <= x < WIDTH and 0 <= y < HEIGHT):
-        return False
-    for ox, oy in others:
-        if (x - ox) ** 2 + (y - oy) ** 2 < MIN_DISTANCE ** 2:
-            return False
-    return True
-
-def compute_move_vector(x, y, flag_pos, others):
-    """Return a normalized vector combining repulsion, attraction and randomness."""
-    ex = ey = 0.0
-    for ox, oy in others:
-        dx = x - ox
-        dy = y - oy
-        d2 = dx * dx + dy * dy
-        if d2 == 0:
-            continue
-        if d2 < MIN_DISTANCE ** 2:
-            dist = math.sqrt(d2)
-            ex += dx / dist
-            ey += dy / dist
-
-    fx = flag_pos[0] - x
-    fy = flag_pos[1] - y
-    flen = math.hypot(fx, fy)
-    if flen != 0:
-        fx /= flen
-        fy /= flen
-    else:
-        fx = fy = 0.0
-
-    angle = random.uniform(0, 2 * math.pi)
-    if random.random() < 0.1:
-        mag = random.uniform(0.5, 3.0)
-    else:
-        mag = random.uniform(0.1, 0.6)
-    rx = math.cos(angle) * mag
-    ry = math.sin(angle) * mag
-
-    vx = ex + fx + rx
-    vy = ey + fy + ry
-    vlen = math.hypot(vx, vy)
-    if vlen == 0:
-        return 0.0, 0.0
-    return vx / vlen, vy / vlen
-
-
-def find_nearest_enemy(x, y, enemies, attack_range):
-    """Return the index of the nearest enemy within ``attack_range`` or None."""
-    best_idx = None
-    best_d2 = attack_range * attack_range + 1
-    for i, (ex, ey) in enumerate(enemies):
-        d2 = (ex - x) ** 2 + (ey - y) ** 2
-        if d2 < best_d2:
-            best_d2 = d2
-            best_idx = i
-    if best_d2 <= attack_range * attack_range:
-        return best_idx
-    return None
-
-
-def handle_attacks(ants, enemies, flags, attack_range=ATTACK_RANGE, kill_probability=KILL_PROBABILITY):
-    """Return sets of attackers and killed enemy indices considering flag types."""
-    attackers = set()
-    killed = set()
-    for i, (x, y) in enumerate(ants):
-        flag = nearest_flag(x, y, flags)
-        if flag and isinstance(flag, FastFlag):
-            continue  # cannot attack when heading to a fast flag
-        target = find_nearest_enemy(x, y, enemies, attack_range)
-        if target is not None:
-            attackers.add(i)
-            if random.random() < kill_probability:
-                killed.add(target)
-    return attackers, killed
-
-
-def nearest_flag(x, y, flags):
-    """Return the closest defined flag to (x, y)."""
-    best_flag = None
-    best_d2 = float("inf")
-    for flag in flags:
-        pos = flag.pos
-        if pos is None:
-            continue
-        d2 = (pos[0] - x) ** 2 + (pos[1] - y) ** 2
-        if d2 < best_d2:
-            best_d2 = d2
-            best_flag = flag
-    return best_flag
-
-
-def propose_moves(ants, attackers, flags, all_ants):
-    """Return proposed new positions for ants based on nearest flag."""
-    proposed = []
-    for i, (x, y) in enumerate(ants):
-        flag = nearest_flag(x, y, flags)
-        if flag is None:
-            proposed.append((x, y))
-            continue
-
-        speed_mult = 1.5 if isinstance(flag, FastFlag) else 1.0
-        speed = (0.3 if i in attackers else 1.0) * speed_mult
-
-        target_pos = (x, y) if isinstance(flag, StopFlag) else flag.pos
-        vx, vy = compute_move_vector(x, y, target_pos, all_ants)
-        nx = max(0, min(WIDTH - 1, x + vx * speed))
-        ny = max(0, min(HEIGHT - 1, y + vy * speed))
-        proposed.append((nx, ny))
-    return proposed
-
-
-def resolve_positions(ants, proposed, killed, occupied_new):
-    """Update ant positions based on proposals and deaths."""
-    new_ants = []
-    for i, (nx, ny) in enumerate(proposed):
-        if i in killed:
-            continue
-        if is_valid_position(nx, ny, occupied_new):
-            new_ants.append((nx, ny))
-            occupied_new.append((nx, ny))
-        else:
-            new_ants.append(tuple(ants[i]))
-            occupied_new.append(tuple(ants[i]))
-    return new_ants
 
 
 def compute_centroid(ants):
@@ -324,6 +197,8 @@ def draw_flag_path(start_pos, flags):
             continue
         draw_dashed_line(current, flag.pos)
         current = flag.pos
+
+occupied = set()
 
 
 # Place footmen in the lower-left corner (25% of the screen)
@@ -415,124 +290,20 @@ while running:
         next_blue_flag_idx = 1 - next_blue_flag_idx
         next_blue_flag_move = now + random.uniform(5, 20)
 
-    all_ants = (
-        swarm_footmen.ants
-        + swarm_archers.ants
-        + swarm_blue_footmen.ants
-        + swarm_blue_archers.ants
-    )
-
-    flag_for_footmen = swarm_footmen.first_flag()
-    flag_for_archers = swarm_archers.first_flag()
-
-    flags_for_footmen = [flag_for_footmen] if flag_for_footmen else []
-    flags_for_archers = [flag_for_archers] if flag_for_archers else []
-
-    attackers_footmen, killed_blue_from_footmen = handle_attacks(
-        swarm_footmen.ants,
-        swarm_blue_footmen.ants + swarm_blue_archers.ants,
-        flags_for_footmen,
-    )
-    attackers_archers, killed_blue_from_archers = handle_attacks(
-        swarm_archers.ants,
-        swarm_blue_footmen.ants + swarm_blue_archers.ants,
-        flags_for_archers,
-        attack_range=ARCHER_ATTACK_RANGE,
-        kill_probability=ARCHER_KILL_PROBABILITY,
-    )
-    attackers_blue, killed_red_all_from_blue = handle_attacks(
-        swarm_blue_footmen.ants,
-        swarm_footmen.ants + swarm_archers.ants,
-        [flags_blue[0]],
-    )
-    attackers_blue_archers, killed_red_all_from_blue_archers = handle_attacks(
-        swarm_blue_archers.ants,
-        swarm_footmen.ants + swarm_archers.ants,
-        [flags_blue[1]],
-        attack_range=ARCHER_ATTACK_RANGE,
-        kill_probability=ARCHER_KILL_PROBABILITY,
-    )
-    killed_blue_all = killed_blue_from_footmen.union(killed_blue_from_archers)
-    killed_red_all = killed_red_all_from_blue.union(killed_red_all_from_blue_archers)
-    killed_blue = {i for i in killed_blue_all if i < len(swarm_blue_footmen.ants)}
-    killed_blue_archers = {
-        i - len(swarm_blue_footmen.ants)
-        for i in killed_blue_all
-        if i >= len(swarm_blue_footmen.ants)
-    }
-    killed_footmen = {i for i in killed_red_all if i < len(swarm_footmen.ants)}
-    killed_archers = {i - len(swarm_footmen.ants) for i in killed_red_all if i >= len(swarm_footmen.ants)}
-
-    proposed_footmen = propose_moves(
-        swarm_footmen.ants, attackers_footmen, flags_for_footmen, all_ants
-    )
-    proposed_archers = propose_moves(
-        swarm_archers.ants, attackers_archers, flags_for_archers, all_ants
-    )
-    proposed_blue = propose_moves(
-        swarm_blue_footmen.ants,
-        attackers_blue,
-        [flags_blue[0]],
-        all_ants,
-    )
-    proposed_blue_archers = propose_moves(
-        swarm_blue_archers.ants,
-        attackers_blue_archers,
-        [flags_blue[1]],
-        all_ants,
-    )
-
-    new_ants_footmen = []
-    new_ants_archers = []
-    new_ants_blue = []
-    new_ants_blue_archers = []
-    occupied_new = []
-
-    new_ants_footmen = resolve_positions(swarm_footmen.ants, proposed_footmen, killed_footmen, occupied_new)
-    new_ants_archers = resolve_positions(
-        swarm_archers.ants, proposed_archers, killed_archers, occupied_new
-    )
-    new_ants_blue = resolve_positions(
-        swarm_blue_footmen.ants,
-        proposed_blue,
-        killed_blue,
-        occupied_new,
-    )
-    new_ants_blue_archers = resolve_positions(
-        swarm_blue_archers.ants,
-        proposed_blue_archers,
-        killed_blue_archers,
-        occupied_new,
-    )
-
-    swarm_footmen.ants = [list(p) for p in new_ants_footmen]
-    swarm_archers.ants = [list(p) for p in new_ants_archers]
-    swarm_blue_footmen.ants = [list(p) for p in new_ants_blue]
-    swarm_blue_archers.ants = [list(p) for p in new_ants_blue_archers]
-
-    # remove flags that have been reached
-    center_footmen = swarm_footmen.compute_centroid()
-    center_archers = swarm_archers.compute_centroid()
-
-    flag_for_footmen = swarm_footmen.first_flag()
-    if flag_for_footmen and center_footmen is not None:
-        if math.hypot(center_footmen[0] - flag_for_footmen.pos[0], center_footmen[1] - flag_for_footmen.pos[1]) < FLAG_REACHED_DISTANCE:
-            flag_queues[GROUP_FOOTMEN].pop(0)
-
-    flag_for_archers = swarm_archers.first_flag()
-    if flag_for_archers and center_archers is not None:
-        if math.hypot(center_archers[0] - flag_for_archers.pos[0], center_archers[1] - flag_for_archers.pos[1]) < FLAG_REACHED_DISTANCE:
-            flag_queues[GROUP_ARCHERS].pop(0)
+    swarm_footmen.tick(1.0)
+    swarm_archers.tick(1.0)
+    swarm_blue_footmen.tick(1.0)
+    swarm_blue_archers.tick(1.0)
 
     screen.fill(BACKGROUND_COLOR)
-    swarm_footmen.engaged = attackers_footmen
-    swarm_archers.engaged = attackers_archers
+    swarm_footmen.engaged = set()
+    swarm_archers.engaged = set()
     swarm_footmen.active = active_group == GROUP_FOOTMEN
     swarm_archers.active = active_group == GROUP_ARCHERS
     swarm_footmen.draw(screen)
     swarm_archers.draw(screen)
-    swarm_blue_archers.engaged = attackers_blue_archers
-    swarm_blue_footmen.engaged = attackers_blue
+    swarm_blue_archers.engaged = set()
+    swarm_blue_footmen.engaged = set()
     swarm_blue_archers.draw(screen)
     swarm_blue_footmen.draw(screen)
 
@@ -558,18 +329,6 @@ while running:
     text_rect = count_text.get_rect(topright=(WIDTH - 5, 5))
     screen.blit(count_text, text_rect)
 
-    engaged_text = font.render(
-        (
-            f"Engaged - Footmen: {len(attackers_footmen)}  "
-            f"Archers: {len(attackers_archers)}  "
-            f"Blue Footmen: {len(attackers_blue)}  "
-            f"Blue Archers: {len(attackers_blue_archers)}"
-        ),
-        True,
-        (255, 255, 255),
-    )
-    engaged_rect = engaged_text.get_rect(topright=(WIDTH - 5, 25))
-    screen.blit(engaged_text, engaged_rect)
 
     pygame.display.flip()
     clock.tick(20)

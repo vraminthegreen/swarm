@@ -61,3 +61,16 @@ class Stage:
     def _draw(self, screen):
         """Subclasses must implement actual drawing logic."""
         raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Simulation
+    # ------------------------------------------------------------------
+    def tick(self, dt):
+        """Advance the simulation by ``dt`` time units and propagate to children."""
+        self._tick(dt)
+        for child in self._children:
+            child.tick(dt)
+
+    def _tick(self, dt):
+        """Subclasses override to update internal state."""
+        pass
