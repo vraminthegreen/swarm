@@ -32,7 +32,8 @@ Groups are numbered from `1` to `9`; by default footmen are in group `1` and
 archers in group `2`. Flag 1 controls only group `1`, flag 2 controls only group
 `2`, flag 3 orders units to move quickly (speed ×1.5) and disables their attacks,
 and flag 4 tells ants to stay put while still allowing them to attack. Click
-anywhere to append a new command to the selected group's queue. Each control group
+anywhere to append a new command to the selected group's queue. Holding `Shift`
+while clicking places a fast-move flag regardless of the current selection. Each control group
 maintains its own list of commands executed in the order they were added. Press the
 `Delete` key to remove the most recently queued flag for the active group. Press
 `Backspace` to clear that group's queue. Clicking a flag along its path removes
