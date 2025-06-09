@@ -8,10 +8,10 @@ import time
 
 from flag import (
     Flag,
-    FLAG_TYPE_NORMAL,
-    FLAG_TYPE_FAST,
-    FLAG_TYPE_STOP,
-    FLAG_TYPE_ARCHER,
+    NormalFlag,
+    FastFlag,
+    StopFlag,
+    ArcherFlag,
     FLAG_SIZE,
 )
 
@@ -71,10 +71,10 @@ flag_font = pygame.font.Font(None, 16)
 
 # Templates for creating new flags via the command queue
 flag_templates = [
-    {"type": FLAG_TYPE_NORMAL},
-    {"type": FLAG_TYPE_NORMAL},
-    {"type": FLAG_TYPE_FAST},
-    {"type": FLAG_TYPE_STOP},
+    {"cls": NormalFlag},
+    {"cls": NormalFlag},
+    {"cls": FastFlag},
+    {"cls": StopFlag},
 ]
 
 # Queue of player-issued flags for each control group
@@ -159,7 +159,7 @@ def handle_attacks(ants, enemies, flags, attack_range=ATTACK_RANGE, kill_probabi
     killed = set()
     for i, (x, y) in enumerate(ants):
         flag = nearest_flag(x, y, flags)
-        if flag and flag.flag_type == FLAG_TYPE_FAST:
+        if flag and isinstance(flag, FastFlag):
             continue  # cannot attack when heading to a fast flag
         target = find_nearest_enemy(x, y, enemies, attack_range)
         if target is not None:
@@ -193,10 +193,10 @@ def propose_moves(ants, attackers, flags, all_ants):
             proposed.append((x, y))
             continue
 
-        speed_mult = 1.5 if flag.flag_type == FLAG_TYPE_FAST else 1.0
+        speed_mult = 1.5 if isinstance(flag, FastFlag) else 1.0
         speed = (0.3 if i in attackers else 1.0) * speed_mult
 
-        target_pos = (x, y) if flag.flag_type == FLAG_TYPE_STOP else flag.pos
+        target_pos = (x, y) if isinstance(flag, StopFlag) else flag.pos
         vx, vy = compute_move_vector(x, y, target_pos, all_ants)
         nx = max(0, min(WIDTH - 1, x + vx * speed))
         ny = max(0, min(HEIGHT - 1, y + vy * speed))
@@ -341,8 +341,8 @@ active_flag_idx = 0
 
 # Blue team alternates between footman and archer flags
 flags_blue = [
-    Flag((random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), FLAG_COLOR_BLUE, flag_type=FLAG_TYPE_NORMAL),
-    Flag(None, FLAG_COLOR_BLUE, flag_type=FLAG_TYPE_ARCHER),
+    NormalFlag((random.uniform(0, WIDTH), random.uniform(0, HEIGHT)), FLAG_COLOR_BLUE),
+    ArcherFlag(None, FLAG_COLOR_BLUE),
 ]
 for f in flags_blue:
     f.add()
@@ -383,10 +383,10 @@ while running:
                     break
             if not removed:
                 if pygame.key.get_mods() & pygame.KMOD_SHIFT:
-                    flag_type = FLAG_TYPE_FAST
+                    flag_cls = FastFlag
                 else:
-                    flag_type = flag_templates[active_flag_idx]["type"]
-                new_flag = Flag(event.pos, FLAG_COLOR_RED, flag_type=flag_type)
+                    flag_cls = flag_templates[active_flag_idx]["cls"]
+                new_flag = flag_cls(event.pos, FLAG_COLOR_RED)
                 new_flag.add()
                 flag_queues[active_group].append(new_flag)
 
@@ -538,7 +538,7 @@ while running:
         flag.draw(screen)
 
     for idx, template in enumerate(flag_templates):
-        temp = Flag(None, FLAG_COLOR_RED, flag_type=template["type"])
+        temp = template["cls"](None, FLAG_COLOR_RED)
         temp.add()
         temp.draw_icon(screen, idx, HEIGHT, idx == active_flag_idx)
 
