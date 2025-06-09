@@ -58,11 +58,25 @@ KILL_PROBABILITY = 0.02  # chance that a footman attack kills the target
 ARCHER_ATTACK_RANGE = 60
 ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
 
+# Distance threshold to consider a flag reached
+FLAG_REACHED_DISTANCE = 10
+
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 font = pygame.font.Font(None, 24)
 flag_font = pygame.font.Font(None, 16)
+
+# Templates for creating new flags via the command queue
+flag_templates = [
+    {"type": FLAG_TYPE_NORMAL, "group": GROUP_FOOTMEN},
+    {"type": FLAG_TYPE_NORMAL, "group": GROUP_ARCHERS},
+    {"type": FLAG_TYPE_FAST, "group": None},
+    {"type": FLAG_TYPE_STOP, "group": None},
+]
+
+# Queue of player-issued flags (commands)
+flag_queue = []
 
 # Initialize ants for both players at random positions
 ants_footmen = []  # footmen units
@@ -206,6 +220,14 @@ def compute_centroid(ants):
     return int(x), int(y)
 
 
+def first_flag_for_group(queue, group):
+    """Return the first flag in ``queue`` applicable to ``group``."""
+    for flag in queue:
+        if flag.get("group") in (group, None):
+            return flag
+    return None
+
+
 def draw_group_banner(ants, color, number):
     """Draw a small banner with the control group number at the group's center."""
     center = compute_centroid(ants)
@@ -318,6 +340,34 @@ def draw_flag_icon(idx, flag_type=FLAG_TYPE_NORMAL, active=False):
         pygame.draw.rect(screen, (255, 255, 0), rect, 1)
 
 
+def draw_dashed_line(start_pos, end_pos, color=(200, 200, 200), dash_length=5):
+    """Draw a dashed line between two points."""
+    x1, y1 = start_pos
+    x2, y2 = end_pos
+    dx = x2 - x1
+    dy = y2 - y1
+    length = math.hypot(dx, dy)
+    if length == 0:
+        return
+    vx = dx / length
+    vy = dy / length
+    num_dashes = int(length // dash_length)
+    for i in range(0, num_dashes, 2):
+        start = (x1 + vx * i * dash_length, y1 + vy * i * dash_length)
+        end = (x1 + vx * min((i + 1) * dash_length, length), y1 + vy * min((i + 1) * dash_length, length))
+        pygame.draw.line(screen, color, start, end)
+
+
+def draw_flag_path(start_pos, flags):
+    """Draw dashed path from ``start_pos`` through the list of flags."""
+    current = start_pos
+    for flag in flags:
+        if flag["pos"] is None:
+            continue
+        draw_dashed_line(current, flag["pos"])
+        current = flag["pos"]
+
+
 # Place footmen in the lower-left corner (25% of the screen)
 while len(ants_footmen) < NUM_FOOTMEN:
     x = random.uniform(0, WIDTH * 0.25)
@@ -350,12 +400,6 @@ while len(ants_blue_archers) < NUM_ARCHERS_BLUE:
         ants_blue_archers.append([x, y])
         occupied.add((x, y))
 
-flags_red = [
-    {"pos": None, "type": FLAG_TYPE_NORMAL, "group": GROUP_FOOTMEN},
-    {"pos": None, "type": FLAG_TYPE_NORMAL, "group": GROUP_ARCHERS},
-    {"pos": None, "type": FLAG_TYPE_FAST, "group": None},
-    {"pos": None, "type": FLAG_TYPE_STOP, "group": None},
-]
 active_flag_idx = 0
 
 # Blue team alternates between footman and archer flags
@@ -381,9 +425,11 @@ while running:
             elif event.key == pygame.K_4:
                 active_flag_idx = 3
             elif event.key in (pygame.K_DELETE, pygame.K_BACKSPACE):
-                flags_red[active_flag_idx]["pos"] = None
+                if flag_queue:
+                    flag_queue.pop()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            flags_red[active_flag_idx]["pos"] = event.pos
+            template = flag_templates[active_flag_idx]
+            flag_queue.append({"pos": event.pos, "type": template["type"], "group": template["group"]})
 
     # move the computer-controlled flags alternately
     now = time.time()
@@ -397,12 +443,11 @@ while running:
 
     all_ants = ants_footmen + ants_archers + ants_blue + ants_blue_archers
 
-    flags_for_footmen = [
-        f for f in flags_red if f.get("group") in (GROUP_FOOTMEN, None)
-    ]
-    flags_for_archers = [
-        f for f in flags_red if f.get("group") in (GROUP_ARCHERS, None)
-    ]
+    flag_for_footmen = first_flag_for_group(flag_queue, GROUP_FOOTMEN)
+    flag_for_archers = first_flag_for_group(flag_queue, GROUP_ARCHERS)
+
+    flags_for_footmen = [flag_for_footmen] if flag_for_footmen else []
+    flags_for_archers = [flag_for_archers] if flag_for_archers else []
 
     attackers_footmen, killed_blue_from_footmen = handle_attacks(
         ants_footmen, ants_blue + ants_blue_archers, flags_for_footmen
@@ -472,6 +517,30 @@ while running:
     ants_blue = [list(p) for p in new_ants_blue]
     ants_blue_archers = [list(p) for p in new_ants_blue_archers]
 
+    # remove flags that have been reached
+    center_footmen = compute_centroid(ants_footmen)
+    center_archers = compute_centroid(ants_archers)
+    center_all = compute_centroid(ants_footmen + ants_archers)
+
+    flag_for_footmen = first_flag_for_group(flag_queue, GROUP_FOOTMEN)
+    if flag_for_footmen and center_footmen is not None:
+        if math.hypot(center_footmen[0] - flag_for_footmen["pos"][0], center_footmen[1] - flag_for_footmen["pos"][1]) < FLAG_REACHED_DISTANCE:
+            if flag_for_footmen in flag_queue:
+                flag_queue.remove(flag_for_footmen)
+
+    flag_for_archers = first_flag_for_group(flag_queue, GROUP_ARCHERS)
+    if flag_for_archers and center_archers is not None:
+        if math.hypot(center_archers[0] - flag_for_archers["pos"][0], center_archers[1] - flag_for_archers["pos"][1]) < FLAG_REACHED_DISTANCE:
+            if flag_for_archers in flag_queue:
+                flag_queue.remove(flag_for_archers)
+
+    # handle flags that apply to all groups
+    flag_for_all = first_flag_for_group(flag_queue, None)
+    if flag_for_all and center_all is not None and flag_for_all.get("group") is None:
+        if math.hypot(center_all[0] - flag_for_all["pos"][0], center_all[1] - flag_for_all["pos"][1]) < FLAG_REACHED_DISTANCE:
+            if flag_for_all in flag_queue:
+                flag_queue.remove(flag_for_all)
+
     screen.fill(BACKGROUND_COLOR)
     draw_ants(ants_footmen, ANT_COLOR_RED, attackers_footmen, ANT_COLOR_RED_ENGAGED)
     draw_ants(
@@ -494,13 +563,16 @@ while running:
     draw_group_banner(ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN)
     draw_group_banner(ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS)
 
-    for idx, flag in enumerate(flags_red, start=1):
+    if center_all and flag_queue:
+        draw_flag_path(center_all, flag_queue)
+
+    for idx, flag in enumerate(flag_queue, start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
     for flag in flags_blue:
         draw_flag(flag["pos"], FLAG_COLOR_BLUE)
 
-    for idx, flag in enumerate(flags_red):
-        draw_flag_icon(idx, flag["type"], idx == active_flag_idx)
+    for idx, template in enumerate(flag_templates):
+        draw_flag_icon(idx, template["type"], idx == active_flag_idx)
 
     # Display remaining ant counts in the top-right corner
     count_text = font.render(
