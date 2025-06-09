@@ -448,8 +448,11 @@ while running:
                 if removed:
                     break
             if not removed:
-                template = flag_templates[active_flag_idx]
-                flag_queues[active_group].append({"pos": event.pos, "type": template["type"]})
+                if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                    flag_type = FLAG_TYPE_FAST
+                else:
+                    flag_type = flag_templates[active_flag_idx]["type"]
+                flag_queues[active_group].append({"pos": event.pos, "type": flag_type})
 
     # move the computer-controlled flags alternately
     now = time.time()
