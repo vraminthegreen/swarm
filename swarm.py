@@ -197,6 +197,30 @@ def resolve_positions(ants, proposed, killed, occupied_new):
     return new_ants
 
 
+def compute_centroid(ants):
+    """Return the centroid of the given ants or None if empty."""
+    if not ants:
+        return None
+    x = sum(a[0] for a in ants) / len(ants)
+    y = sum(a[1] for a in ants) / len(ants)
+    return int(x), int(y)
+
+
+def draw_group_banner(ants, color, number):
+    """Draw a small banner with the control group number at the group's center."""
+    center = compute_centroid(ants)
+    if center is None:
+        return
+    rect_width, rect_height = 14, 10
+    rect = pygame.Rect(
+        center[0] - rect_width // 2, center[1] - rect_height // 2, rect_width, rect_height
+    )
+    pygame.draw.rect(screen, color, rect)
+    pygame.draw.rect(screen, (255, 255, 255), rect, 1)
+    text = flag_font.render(str(number), True, (255, 255, 255))
+    text_rect = text.get_rect(center=center)
+    screen.blit(text, text_rect)
+
 def draw_ants(ants, color, engaged=None, engaged_color=None, shape="circle"):
     """Draw ants with optional shape, highlighting engaged ones with a lighter color."""
     for i, (x, y) in enumerate(ants):
@@ -465,6 +489,10 @@ while running:
         shape="semicircle",
     )
     draw_ants(ants_blue, ANT_COLOR_BLUE, attackers_blue, ANT_COLOR_BLUE_ENGAGED)
+
+    # control group banners for player units
+    draw_group_banner(ants_footmen, ANT_COLOR_RED, GROUP_FOOTMEN)
+    draw_group_banner(ants_archers, ANT_COLOR_ARCHER, GROUP_ARCHERS)
 
     for idx, flag in enumerate(flags_red, start=1):
         draw_flag(flag["pos"], FLAG_COLOR_RED, idx, flag["type"])
