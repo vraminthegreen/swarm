@@ -35,6 +35,9 @@ and flag 4 tells ants to stay put while still allowing them to attack. Click
 anywhere to place the currently active flag. Press the `Delete` key (or
 `Backspace` on macOS keyboards) to remove it. The simulation updates about 10
 times per second and displays a small flag instead of a green square.
+Each control group also shows a small banner at its center of mass with the
+group number, making it easier to identify footmen and archer groups during
+battle.
 
 ## Gameplay
 
