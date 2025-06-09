@@ -31,4 +31,4 @@ pip install --upgrade pip >/dev/null
 pip install pygame >/dev/null
 
 # Run the game
-python swarm.py
+python main.py
