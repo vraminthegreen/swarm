@@ -6,6 +6,8 @@ import random
 import math
 import time
 
+from order_queue import OrderQueue
+
 from flag import (
     Flag,
     NormalFlag,
@@ -79,8 +81,8 @@ flag_templates = [
 
 # Queue of player-issued flags for each control group
 flag_queues = {
-    GROUP_FOOTMEN: [],
-    GROUP_ARCHERS: [],
+    GROUP_FOOTMEN: OrderQueue(),
+    GROUP_ARCHERS: OrderQueue(),
 }
 
 # Currently selected control group
@@ -388,7 +390,7 @@ while running:
                     flag_cls = flag_templates[active_flag_idx]["cls"]
                 new_flag = flag_cls(event.pos, FLAG_COLOR_RED)
                 new_flag.show()
-                flag_queues[active_group].append(new_flag)
+                flag_queues[active_group].add_flag(new_flag)
 
     # move the computer-controlled flags alternately
     now = time.time()
