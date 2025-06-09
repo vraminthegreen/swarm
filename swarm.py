@@ -105,7 +105,16 @@ def draw_flag_path(screen, start_pos, flags):
 class Swarm(Stage):
     """Group of units of one type belonging to a single player."""
 
-    def __init__(self, color, group_id, flag_color, shape="circle"):
+    def __init__(
+        self,
+        color,
+        group_id,
+        flag_color,
+        shape="circle",
+        width=640,
+        height=480,
+        min_distance=4,
+    ):
         super().__init__()
         self.ants = []
         self.color = color
@@ -116,6 +125,10 @@ class Swarm(Stage):
         self.active = False
         self.engaged = set()
 
+        self.width = width
+        self.height = height
+        self.min_distance = min_distance
+
         self.queue = OrderQueue()
         self.add_stage(self.queue)
 
@@ -125,8 +138,11 @@ class Swarm(Stage):
     def first_flag(self):
         return self.queue[0] if self.queue else None
 
-    def spawn(self, count, x_range, y_range, occupied, width=640, height=480, min_distance=4):
+    def spawn(self, count, x_range, y_range, occupied, width=None, height=None, min_distance=None):
         """Populate the swarm with ``count`` units randomly inside the area."""
+        width = self.width if width is None else width
+        height = self.height if height is None else height
+        min_distance = self.min_distance if min_distance is None else min_distance
         while len(self.ants) < count:
             x = random.uniform(*x_range)
             y = random.uniform(*y_range)
@@ -145,4 +161,103 @@ class Swarm(Stage):
         for idx, flag in enumerate(self.queue, start=1):
             flag.number = idx
             flag.color = self.flag_color
+
+    # ------------------------------------------------------------------
+    # Movement helpers
+    # ------------------------------------------------------------------
+    def _is_valid_position(self, x, y, others):
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return False
+        for ox, oy in others:
+            if (x - ox) ** 2 + (y - oy) ** 2 < self.min_distance ** 2:
+                return False
+        return True
+
+    def _compute_move_vector(self, x, y, flag_pos, others):
+        ex = ey = 0.0
+        for ox, oy in others:
+            dx = x - ox
+            dy = y - oy
+            d2 = dx * dx + dy * dy
+            if d2 == 0:
+                continue
+            if d2 < self.min_distance ** 2:
+                dist = math.sqrt(d2)
+                ex += dx / dist
+                ey += dy / dist
+
+        fx = flag_pos[0] - x
+        fy = flag_pos[1] - y
+        flen = math.hypot(fx, fy)
+        if flen != 0:
+            fx /= flen
+            fy /= flen
+        else:
+            fx = fy = 0.0
+
+        angle = random.uniform(0, 2 * math.pi)
+        mag = random.uniform(0.5, 3.0) if random.random() < 0.1 else random.uniform(0.1, 0.6)
+        rx = math.cos(angle) * mag
+        ry = math.sin(angle) * mag
+
+        vx = ex + fx + rx
+        vy = ey + fy + ry
+        vlen = math.hypot(vx, vy)
+        if vlen == 0:
+            return 0.0, 0.0
+        return vx / vlen, vy / vlen
+
+    def _nearest_flag(self, x, y, flags):
+        best_flag = None
+        best_d2 = float("inf")
+        for flag in flags:
+            pos = flag.pos
+            if pos is None:
+                continue
+            d2 = (pos[0] - x) ** 2 + (pos[1] - y) ** 2
+            if d2 < best_d2:
+                best_d2 = d2
+                best_flag = flag
+        return best_flag
+
+    def _propose_moves(self, ants, flags, all_ants, tick):
+        proposed = []
+        for i, (x, y) in enumerate(ants):
+            flag = self._nearest_flag(x, y, flags)
+            if flag is None:
+                proposed.append((x, y))
+                continue
+            target_pos = flag.pos
+            vx, vy = self._compute_move_vector(x, y, target_pos, all_ants)
+            nx = max(0, min(self.width - 1, x + vx * tick))
+            ny = max(0, min(self.height - 1, y + vy * tick))
+            proposed.append((nx, ny))
+        return proposed
+
+    def _resolve_positions(self, ants, proposed):
+        new_ants = []
+        occupied_new = []
+        for i, (nx, ny) in enumerate(proposed):
+            if self._is_valid_position(nx, ny, occupied_new):
+                new_ants.append((nx, ny))
+                occupied_new.append((nx, ny))
+            else:
+                new_ants.append(tuple(ants[i]))
+                occupied_new.append(tuple(ants[i]))
+        return new_ants
+
+    # ------------------------------------------------------------------
+    # Simulation
+    # ------------------------------------------------------------------
+    def _tick(self, dt):
+        flag = self.first_flag()
+        flags = [flag] if flag else []
+        all_ants = self.ants
+        proposed = self._propose_moves(self.ants, flags, all_ants, dt)
+        self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
+
+        center = self.compute_centroid()
+        if flag and center is not None:
+            if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
+                self.queue.pop(0)
 
