@@ -4,6 +4,7 @@ class Stage:
     def __init__(self):
         self._visible = False
         self._children = []
+        self._parent = None
 
     # ------------------------------------------------------------------
     # Tree management
@@ -13,10 +14,12 @@ class Stage:
         if not isinstance(child, Stage):
             raise TypeError("child must be a Stage instance")
         self._children.append(child)
+        child._parent = self
 
     def remove_stage(self, child):
         """Detach a child stage from this stage."""
         self._children.remove(child)
+        child._parent = None
 
     # ------------------------------------------------------------------
     # Visibility control
@@ -39,6 +42,21 @@ class Stage:
             self._draw(screen)
             for child in self._children:
                 child.draw(screen)
+
+    def handleEvent(self, event):
+        """Process an event, returning True if it was consumed."""
+        if not self._visible:
+            return False
+        if self._handle_event(event):
+            return True
+        for child in list(self._children):
+            if child.handleEvent(event):
+                return True
+        return False
+
+    def _handle_event(self, event):
+        """Subclasses override to handle events."""
+        return False
 
     def _draw(self, screen):
         """Subclasses must implement actual drawing logic."""

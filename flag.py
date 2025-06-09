@@ -1,4 +1,5 @@
 import pygame
+import math
 from stage import Stage
 
 FLAG_SIZE = 12
@@ -41,6 +42,19 @@ class Flag(Stage):
         if self.pos is None:
             return
         self._draw_flag_at(screen, self.pos, self.number)
+
+    def _handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.pos is not None:
+            if math.hypot(self.pos[0] - event.pos[0], self.pos[1] - event.pos[1]) <= FLAG_SIZE:
+                parent = getattr(self, "_parent", None)
+                if parent is not None:
+                    remove = getattr(parent, "remove", None)
+                    if callable(remove):
+                        remove(self)
+                    else:
+                        parent.remove_stage(self)
+                return True
+        return False
 
     def draw_icon(self, screen, idx, height, active=False):
         """Draw a small icon representation of this flag."""
