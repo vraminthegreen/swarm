@@ -55,3 +55,11 @@ class OrderQueue(Stage):
 
     def __iter__(self):
         return iter(self._queue)
+
+    # ------------------------------------------------------------------
+    # Drawing
+    # ------------------------------------------------------------------
+    def _draw(self, screen):
+        """Draw all flags in the queue."""
+        for flag in self._queue:
+            flag.draw(screen)
