@@ -59,8 +59,8 @@ class Stage:
         return False
 
     def _draw(self, screen):
-        """Subclasses must implement actual drawing logic."""
-        raise NotImplementedError
+        """Draw this stage element. Subclasses may override."""
+        pass
 
     # ------------------------------------------------------------------
     # Simulation
