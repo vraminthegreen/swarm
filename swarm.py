@@ -84,6 +84,9 @@ flag_queues = {
     GROUP_FOOTMEN: OrderQueue(),
     GROUP_ARCHERS: OrderQueue(),
 }
+flag_queues[GROUP_FOOTMEN].show()
+flag_queues[GROUP_ARCHERS].show()
+
 
 # Currently selected control group
 active_group = GROUP_FOOTMEN
@@ -352,6 +355,7 @@ next_blue_flag_idx = 1
 next_blue_flag_move = time.time() + random.uniform(5, 20)
 
 running = True
+print("[Swarm] starting")
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

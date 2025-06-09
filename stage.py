@@ -47,11 +47,11 @@ class Stage:
         """Process an event, returning True if it was consumed."""
         if not self._visible:
             return False
-        if self._handle_event(event):
-            return True
         for child in list(self._children):
             if child.handleEvent(event):
                 return True
+        if self._handle_event(event):
+            return True
         return False
 
     def _handle_event(self, event):
