@@ -25,26 +25,25 @@ Execute the simulation using the provided helper script:
 ./run.sh
 ```
 
-Use the `1`, `2`, `3` and `4` keys to choose which red flag is active. The icons for the
-four flags are shown at the bottom of the window. The active flag is highlighted
-with a rectangle. Control groups allow commands to target subsets of your army.
-Groups are numbered from `1` to `9`; by default footmen are in group `1` and
-archers in group `2`. Flag 1 controls only group `1`, flag 2 controls only group
-`2`, flag 3 orders units to move quickly (speed ×1.5) and disables their attacks,
-and flag 4 tells ants to stay put while still allowing them to attack. Click
-anywhere to append a new command to the selected group's queue. Holding `Shift`
-while clicking places a fast-move flag regardless of the current selection. Each control group
-maintains its own list of commands executed in the order they were added. Press the
-`Delete` key to remove the most recently queued flag for the active group. Press
-`Backspace` to clear that group's queue. Clicking a flag along its path removes
-only that flag from the queue. A dashed line shows the planned path from
-each control group to the flags in its queue so you can see orders for all groups
-at a glance. The simulation
-updates about 10 times per second and displays a small flag instead of a green
-square.
-Each control group also shows a small banner at its center of mass with the
-group number, making it easier to identify footmen and archer groups during
-battle.
+Control groups allow commands to target subsets of your army. Groups are
+numbered from `1` to `9`; by default footmen are in group `1` and archers in
+group `2`. Use the numeric keys `1` and `2` to select the active group.
+
+Commands are issued using the mouse or hotkeys:
+
+- Left click or press `A` to place an attack flag, replacing the current queue.
+- Hold `Shift` while clicking or pressing `A` to append an attack flag instead.
+- Press `M` to place a fast-move flag that clears the queue.
+- Hold `Shift` with `M` to append a fast-move flag.
+
+Press the `Delete` key to remove the most recently queued flag for the active
+group and `Backspace` to clear that group's queue. Clicking a flag along its path
+removes only that flag. A dashed line shows the planned path from each control
+group to its queued flags so you can see orders for all groups at a glance. The
+simulation updates about 10 times per second and displays a small flag instead of
+a green square. Each control group also shows a small banner at its center of
+mass with the group number, making it easier to identify footmen and archer
+groups during battle.
 
 ## Gameplay
 

@@ -99,18 +99,21 @@ class GameField(Stage):
     def _handle_event(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
-                self.active_flag_idx = 0
                 self.active_group = self.GROUP_FOOTMEN
                 return True
             if event.key == pygame.K_2:
-                self.active_flag_idx = 1
                 self.active_group = self.GROUP_ARCHERS
                 return True
-            if event.key == pygame.K_3:
-                self.active_flag_idx = 2
-                return True
-            if event.key == pygame.K_4:
-                self.active_flag_idx = 3
+            if event.key in (pygame.K_a, pygame.K_m):
+                flag_cls = NormalFlag if event.key == pygame.K_a else FastFlag
+                pos = pygame.mouse.get_pos()
+                queue = self.flag_queues[self.active_group]
+                mods = getattr(event, "mod", pygame.key.get_mods())
+                if mods & pygame.KMOD_SHIFT:
+                    queue.add_flag_at(pos, flag_cls)
+                else:
+                    queue.clear()
+                    queue.add_flag_at(pos, flag_cls)
                 return True
             if event.key == pygame.K_DELETE:
                 if self.flag_queues[self.active_group]:
@@ -119,12 +122,13 @@ class GameField(Stage):
             if event.key == pygame.K_BACKSPACE:
                 self.flag_queues[self.active_group].clear()
                 return True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            queue = self.flag_queues[self.active_group]
             if pygame.key.get_mods() & pygame.KMOD_SHIFT:
-                flag_cls = FastFlag
+                queue.add_flag_at(event.pos, NormalFlag)
             else:
-                flag_cls = self.flag_templates[self.active_flag_idx]["cls"]
-            self.flag_queues[self.active_group].add_flag_at(event.pos, flag_cls)
+                queue.clear()
+                queue.add_flag_at(event.pos, NormalFlag)
             return True
         return False
 
