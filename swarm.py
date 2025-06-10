@@ -170,6 +170,7 @@ class Swarm(Stage):
         self.flag_color = flag_color
         self.active = False
         self.engaged = set()
+        self.colliding_swarms = []
 
         # Cached centroid value for performance
         self._centroid_cache = None
@@ -208,6 +209,11 @@ class Swarm(Stage):
                 radius = dist
         return CollisionShape(center, radius)
 
+    def onCollision(self, stage):
+        """Record collisions with other swarms."""
+        if isinstance(stage, Swarm) and stage is not self:
+            self.colliding_swarms.append(stage)
+
     def first_flag(self):
         return self.queue[0] if self.queue else None
 
@@ -243,6 +249,13 @@ class Swarm(Stage):
         shape = self.getCollisionShape()
         if shape is not None:
             draw_dotted_circle(screen, shape.center, shape.radius)
+        center = self.compute_centroid()
+        if center:
+            for other in self.colliding_swarms:
+                other_center = other.compute_centroid()
+                if other_center:
+                    pygame.draw.line(screen, (255, 0, 0), center, other_center, width=3)
+        self.colliding_swarms.clear()
 
     # ------------------------------------------------------------------
     # Movement helpers

@@ -70,6 +70,8 @@ class Stage:
         self._tick(dt)
         for child in self._children:
             child.tick(dt)
+        if self._parent is None:
+            self._resolve_collisions()
 
     def _tick(self, dt):
         """Subclasses override to update internal state."""
@@ -85,3 +87,30 @@ class Stage:
     def getCollisionShape(self):
         """Return the collision shape of this element if available."""
         return None
+
+    def onCollision(self, stage):
+        """Handle a collision with ``stage``. Subclasses may override."""
+        pass
+
+    # ------------------------------------------------------------------
+    # Collision handling helpers
+    # ------------------------------------------------------------------
+    def _collect_collision_stages(self):
+        stages = []
+        if self.getCollisionShape() is not None:
+            stages.append(self)
+        for child in self._children:
+            stages.extend(child._collect_collision_stages())
+        return stages
+
+    def _resolve_collisions(self):
+        stages = self._collect_collision_stages()
+        for i in range(len(stages)):
+            for j in range(i + 1, len(stages)):
+                s1 = stages[i]
+                s2 = stages[j]
+                shape1 = s1.getCollisionShape()
+                shape2 = s2.getCollisionShape()
+                if shape1 and shape2 and shape1.collidesWith(shape2):
+                    s1.onCollision(s2)
+                    s2.onCollision(s1)
