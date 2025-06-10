@@ -124,10 +124,7 @@ class GameField(Stage):
     # ------------------------------------------------------------------
     # Drawing
     # ------------------------------------------------------------------
-    def draw(self, screen):
-        if not self._visible:
-            return
-
+    def _draw(self, screen):
         # Background and state updates
         screen.fill(self.BACKGROUND_COLOR)
         self.swarm_footmen.active = self.active_group == self.GROUP_FOOTMEN
@@ -136,10 +133,6 @@ class GameField(Stage):
         self.swarm_archers.engaged = set()
         self.ai_player.swarm_archers.engaged = set()
         self.ai_player.swarm_footmen.engaged = set()
-
-        # Draw swarms and AI
-        for child in self._children:
-            child.draw(screen)
 
         # Flag icons
         for idx, template in enumerate(self.flag_templates):
