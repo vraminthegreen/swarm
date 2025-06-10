@@ -140,19 +140,7 @@ class GameField(Stage):
             temp.show()
             temp.draw_icon(screen, idx, self.height, idx == self.active_flag_idx)
 
-        # Ant counts
-        count_text = self.font.render(
-            (
-                f"Footmen: {len(self.swarm_footmen.ants)}  "
-                f"Archers: {len(self.swarm_archers.ants)}  "
-                f"Blue Footmen: {len(self.ai_player.swarm_footmen.ants)}  "
-                f"Blue Archers: {len(self.ai_player.swarm_archers.ants)}"
-            ),
-            True,
-            (255, 255, 255),
-        )
-        text_rect = count_text.get_rect(topright=(self.width - 5, 5))
-        screen.blit(count_text, text_rect)
+
 
     # ------------------------------------------------------------------
     # Simulation - tick is inherited and propagates to children
