@@ -195,5 +195,7 @@ class GameField(Stage):
                     break
         for j in sorted(set(remove_indices), reverse=True):
             defenders.ants.pop(j)
+        if remove_indices:
+            defenders._invalidate_centroid_cache()
         attackers.engaged.update(engaged_attackers)
         defenders.engaged.update(engaged_defenders)
