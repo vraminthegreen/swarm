@@ -4,6 +4,7 @@ import pygame
 
 from stage import Stage
 from order_queue import OrderQueue
+from flag import FastFlag
 
 DOT_SIZE = 4
 BACKGROUND_COLOR = (0, 0, 0)
@@ -166,6 +167,11 @@ class Swarm(Stage):
     def first_flag(self):
         return self.queue[0] if self.queue else None
 
+    def is_fast_moving(self):
+        """Return True if the active flag is a FastFlag."""
+        flag = self.first_flag()
+        return isinstance(flag, FastFlag)
+
     def spawn(self, count, x_range, y_range, occupied, width=None, height=None, min_distance=None):
         """Populate the swarm with ``count`` units randomly inside the area."""
         width = self.width if width is None else width
@@ -281,7 +287,8 @@ class Swarm(Stage):
         flag = self.first_flag()
         flags = [flag] if flag else []
         all_ants = self.ants
-        proposed = self._propose_moves(self.ants, flags, all_ants, dt)
+        speed = dt * 1.5 if isinstance(flag, FastFlag) else dt
+        proposed = self._propose_moves(self.ants, flags, all_ants, speed)
         self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
 
         center = self.compute_centroid()
