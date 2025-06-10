@@ -81,3 +81,7 @@ class Stage:
     def getPosition(self):
         """Return the (x, y) position of this stage element if available."""
         return None
+
+    def getCollisionShape(self):
+        """Return the collision shape of this element if available."""
+        return None

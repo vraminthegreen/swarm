@@ -5,6 +5,7 @@ import pygame
 from stage import Stage
 from order_queue import OrderQueue
 from flag import FastFlag
+from collision_shape import CollisionShape
 
 DOT_SIZE = 4
 BACKGROUND_COLOR = (0, 0, 0)
@@ -131,6 +132,22 @@ def draw_flag_path(screen, start_pos, flags):
         current = flag.pos
 
 
+def draw_dotted_circle(screen, center, radius, color=(255, 165, 0), segments=60):
+    """Draw a dotted circle using ``segments`` line pieces."""
+    if radius <= 0:
+        return
+    points = [
+        (
+            center[0] + radius * math.cos(2 * math.pi * i / segments),
+            center[1] + radius * math.sin(2 * math.pi * i / segments),
+        )
+        for i in range(segments + 1)
+    ]
+    for i in range(segments):
+        if i % 2 == 0:
+            pygame.draw.line(screen, color, points[i], points[i + 1])
+
+
 class Swarm(Stage):
     """Group of units of one type belonging to a single player."""
 
@@ -178,6 +195,19 @@ class Swarm(Stage):
         """Return the centroid position of this swarm."""
         return self.compute_centroid()
 
+    def getCollisionShape(self):
+        """Return a circular collision shape encompassing the swarm."""
+        center = self.compute_centroid()
+        if center is None:
+            return None
+        radius = 0.0
+        cx, cy = center
+        for x, y in self.ants:
+            dist = math.hypot(x - cx, y - cy)
+            if dist > radius:
+                radius = dist
+        return CollisionShape(center, radius)
+
     def first_flag(self):
         return self.queue[0] if self.queue else None
 
@@ -210,6 +240,9 @@ class Swarm(Stage):
         for idx, flag in enumerate(self.queue, start=1):
             flag.number = idx
             flag.color = self.flag_color
+        shape = self.getCollisionShape()
+        if shape is not None:
+            draw_dotted_circle(screen, shape.center, shape.radius)
 
     # ------------------------------------------------------------------
     # Movement helpers
