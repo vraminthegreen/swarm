@@ -70,6 +70,12 @@ def draw_group_banner(screen, ants, color, number, active=False):
     text_rect = text.get_rect(center=center)
     screen.blit(text, text_rect)
 
+    # Display the size of the swarm just below the banner
+    count_font = pygame.font.Font(None, 14)
+    count_text = count_font.render(str(len(ants)), True, (255, 255, 255))
+    count_rect = count_text.get_rect(midtop=(center[0], rect.bottom + 2))
+    screen.blit(count_text, count_rect)
+
 
 def draw_dashed_line(screen, start_pos, end_pos, color=(200, 200, 200), dash_length=5):
     """Draw a dashed line between ``start_pos`` and ``end_pos``."""
