@@ -33,6 +33,19 @@ def compute_centroid(ants):
     return int(x), int(y)
 
 
+def render_text_with_outline(font, text, text_color, outline_color):
+    """Return a surface with ``text`` drawn in ``text_color`` with ``outline_color``."""
+    base = font.render(text, True, text_color)
+    outline = font.render(text, True, outline_color)
+    image = pygame.Surface((base.get_width() + 2, base.get_height() + 2), pygame.SRCALPHA)
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            if dx != 0 or dy != 0:
+                image.blit(outline, (dx + 1, dy + 1))
+    image.blit(base, (1, 1))
+    return image
+
+
 def draw_ants(screen, ants, color, engaged=None, engaged_color=None, shape="circle"):
     """Draw ants on ``screen`` with optional highlighting for engaged ones."""
     for i, (x, y) in enumerate(ants):
@@ -79,9 +92,11 @@ def draw_group_banner(screen, ants, color, number, active=False):
     # Display the size of the swarm just below the banner
     # Increase the font size for the swarm count by 20%
     count_font = pygame.font.Font(None, 17)
-    count_text = count_font.render(str(len(ants)), True, (255, 255, 255))
-    count_rect = count_text.get_rect(midtop=(center[0], rect.bottom + 2))
-    screen.blit(count_text, count_rect)
+    count_surface = render_text_with_outline(
+        count_font, str(len(ants)), (255, 255, 0), (0, 0, 0)
+    )
+    count_rect = count_surface.get_rect(midtop=(center[0], rect.bottom + 2))
+    screen.blit(count_surface, count_rect)
 
 
 def draw_dashed_line(screen, start_pos, end_pos, color=(200, 200, 200), dash_length=5):
