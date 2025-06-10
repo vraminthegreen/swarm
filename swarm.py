@@ -287,5 +287,6 @@ class Swarm(Stage):
         center = self.compute_centroid()
         if flag and flag.pos is not None and center is not None:
             if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
-                self.queue.pop(0)
+                if len(self.queue) > 1:
+                    self.queue.pop(0)
 
