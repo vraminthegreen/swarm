@@ -1,7 +1,14 @@
 import pygame
+import random
 
 from stage import Stage
-from swarm import Swarm
+from swarm import (
+    Swarm,
+    ATTACK_RANGE,
+    ARCHER_ATTACK_RANGE,
+    KILL_PROBABILITY,
+    ARCHER_KILL_PROBABILITY,
+)
 from ai_player import AIPlayer
 from flag import NormalFlag, FastFlag, StopFlag
 
@@ -143,5 +150,44 @@ class GameField(Stage):
 
 
     # ------------------------------------------------------------------
-    # Simulation - tick is inherited and propagates to children
+    # Simulation
     # ------------------------------------------------------------------
+    def tick(self, dt):
+        """Advance children first, then resolve combat."""
+        for child in self._children:
+            child.tick(dt)
+        self._tick(dt)
+
+    def _tick(self, dt):
+        self._resolve_combat()
+
+    # ------------------------------------------------------------------
+    # Combat resolution
+    # ------------------------------------------------------------------
+    def _resolve_combat(self):
+        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_footmen, ATTACK_RANGE, KILL_PROBABILITY)
+        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_archers, ATTACK_RANGE, KILL_PROBABILITY)
+        self._handle_combat(self.swarm_archers, self.ai_player.swarm_footmen, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.swarm_archers, self.ai_player.swarm_archers, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_footmen, ATTACK_RANGE, KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_archers, ATTACK_RANGE, KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_archers, self.swarm_footmen, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_archers, self.swarm_archers, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
+
+    def _handle_combat(self, attackers, defenders, attack_range, kill_prob):
+        engaged_attackers = set()
+        engaged_defenders = set()
+        remove_indices = []
+        range_sq = attack_range * attack_range
+        for i, (ax, ay) in enumerate(attackers.ants):
+            for j, (dx, dy) in enumerate(defenders.ants):
+                if (ax - dx) ** 2 + (ay - dy) ** 2 <= range_sq:
+                    engaged_attackers.add(i)
+                    engaged_defenders.add(j)
+                    if random.random() < kill_prob:
+                        remove_indices.append(j)
+                    break
+        for j in sorted(set(remove_indices), reverse=True):
+            defenders.ants.pop(j)
+        attackers.engaged.update(engaged_attackers)
+        defenders.engaged.update(engaged_defenders)
