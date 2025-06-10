@@ -8,6 +8,12 @@ from order_queue import OrderQueue
 DOT_SIZE = 4
 BACKGROUND_COLOR = (0, 0, 0)
 
+# Combat configuration
+ATTACK_RANGE = 12
+KILL_PROBABILITY = 0.02
+ARCHER_ATTACK_RANGE = 60
+ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
+
 
 def lighten(color, factor=0.5):
     """Return a lighter variant of the given RGB color."""
@@ -71,7 +77,8 @@ def draw_group_banner(screen, ants, color, number, active=False):
     screen.blit(text, text_rect)
 
     # Display the size of the swarm just below the banner
-    count_font = pygame.font.Font(None, 14)
+    # Increase the font size for the swarm count by 20%
+    count_font = pygame.font.Font(None, 17)
     count_text = count_font.render(str(len(ants)), True, (255, 255, 255))
     count_rect = count_text.get_rect(midtop=(center[0], rect.bottom + 2))
     screen.blit(count_text, count_rect)
