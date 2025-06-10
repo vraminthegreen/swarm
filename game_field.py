@@ -179,6 +179,8 @@ class GameField(Stage):
         self._handle_combat(self.ai_player.swarm_archers, self.swarm_archers, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
 
     def _handle_combat(self, attackers, defenders, attack_range, kill_prob):
+        if attackers.is_fast_moving():
+            return
         engaged_attackers = set()
         engaged_defenders = set()
         remove_indices = []
