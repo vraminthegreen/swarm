@@ -136,10 +136,6 @@ class GameField(Stage):
         screen.fill(self.BACKGROUND_COLOR)
         self.swarm_footmen.active = self.active_group == self.GROUP_FOOTMEN
         self.swarm_archers.active = self.active_group == self.GROUP_ARCHERS
-        self.swarm_footmen.engaged = set()
-        self.swarm_archers.engaged = set()
-        self.ai_player.swarm_archers.engaged = set()
-        self.ai_player.swarm_footmen.engaged = set()
 
         # Flag icons
         for idx, template in enumerate(self.flag_templates):
@@ -159,6 +155,10 @@ class GameField(Stage):
         self._tick(dt)
 
     def _tick(self, dt):
+        self.swarm_footmen.engaged = set()
+        self.swarm_archers.engaged = set()
+        self.ai_player.swarm_archers.engaged = set()
+        self.ai_player.swarm_footmen.engaged = set()
         self._resolve_combat()
 
     # ------------------------------------------------------------------
