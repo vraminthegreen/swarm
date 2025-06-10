@@ -14,6 +14,10 @@ class Flag(Stage):
         self.color = color
         self.number = number
 
+    def getPosition(self):
+        """Return the current flag position."""
+        return self.pos
+
     def draw_symbol(self, screen, pole_top):
         """Draw the basic triangular flag."""
         flag_points = [
