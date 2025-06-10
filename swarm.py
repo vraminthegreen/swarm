@@ -154,6 +154,9 @@ class Swarm(Stage):
         self.active = False
         self.engaged = set()
 
+        # Cached centroid value for performance
+        self._centroid_cache = None
+
         self.width = width
         self.height = height
         self.min_distance = min_distance
@@ -162,7 +165,14 @@ class Swarm(Stage):
         self.add_stage(self.queue)
 
     def compute_centroid(self):
-        return compute_centroid(self.ants)
+        """Return the cached centroid of the swarm's units."""
+        if self._centroid_cache is None:
+            self._centroid_cache = compute_centroid(self.ants)
+        return self._centroid_cache
+
+    def _invalidate_centroid_cache(self):
+        """Clear the cached centroid."""
+        self._centroid_cache = None
 
     def getPosition(self):
         """Return the centroid position of this swarm."""
@@ -187,6 +197,7 @@ class Swarm(Stage):
             if 0 <= x < width and 0 <= y < height:
                 if all((x - ox) ** 2 + (y - oy) ** 2 >= min_distance ** 2 for ox, oy in occupied):
                     self.ants.append([x, y])
+                    self._invalidate_centroid_cache()
                     occupied.add((x, y))
 
     def _draw(self, screen):
@@ -294,6 +305,7 @@ class Swarm(Stage):
         speed = dt * 1.5 if isinstance(flag, FastFlag) else dt
         proposed = self._propose_moves(self.ants, flags, all_ants, speed)
         self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
+        self._invalidate_centroid_cache()
 
         center = self.compute_centroid()
         if flag and flag.pos is not None and center is not None:
