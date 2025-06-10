@@ -164,6 +164,10 @@ class Swarm(Stage):
     def compute_centroid(self):
         return compute_centroid(self.ants)
 
+    def getPosition(self):
+        """Return the centroid position of this swarm."""
+        return self.compute_centroid()
+
     def first_flag(self):
         return self.queue[0] if self.queue else None
 

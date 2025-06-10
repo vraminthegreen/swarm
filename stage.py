@@ -74,3 +74,10 @@ class Stage:
     def _tick(self, dt):
         """Subclasses override to update internal state."""
         pass
+
+    # ------------------------------------------------------------------
+    # Positioning
+    # ------------------------------------------------------------------
+    def getPosition(self):
+        """Return the (x, y) position of this stage element if available."""
+        return None
