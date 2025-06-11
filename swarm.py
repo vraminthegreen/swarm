@@ -160,6 +160,7 @@ class Swarm(Stage):
         width=640,
         height=480,
         min_distance=4,
+        attack_range=ATTACK_RANGE,
     ):
         super().__init__()
         self.ants = []
@@ -178,6 +179,7 @@ class Swarm(Stage):
         self.width = width
         self.height = height
         self.min_distance = min_distance
+        self.attack_range = attack_range
 
         self.queue = OrderQueue()
         self.add_stage(self.queue)
@@ -207,6 +209,11 @@ class Swarm(Stage):
             dist = math.hypot(x - cx, y - cy)
             if dist > radius:
                 radius = dist
+
+        # Expand the collision radius by the swarm's attack range so that
+        # swarms register a collision when they are close enough to fight.
+        radius += self.attack_range
+
         return CollisionShape(center, radius)
 
     def onCollision(self, stage):
