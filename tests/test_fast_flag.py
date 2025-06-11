@@ -61,13 +61,14 @@ def test_fast_flag_speeds_units():
 
 def test_fast_flag_disables_attack():
     field = create_combat_field()
+    field.swarm_footmen.kill_probability = 1.0
     field.swarm_footmen.queue.add_flag_at((60, 50), FastFlag)
     initial = len(field.ai_player.swarm_footmen.ants)
-    field._handle_combat(field.swarm_footmen, field.ai_player.swarm_footmen, 1.0)
+    field.swarm_footmen.onCollision(field.ai_player.swarm_footmen)
     assert len(field.ai_player.swarm_footmen.ants) == initial
 
     field.swarm_footmen.queue.clear()
     field.swarm_footmen.queue.add_flag_at((60, 50), NormalFlag)
     field.ai_player.swarm_footmen.ants = [[52, 50]]
-    field._handle_combat(field.swarm_footmen, field.ai_player.swarm_footmen, 1.0)
+    field.swarm_footmen.onCollision(field.ai_player.swarm_footmen)
     assert len(field.ai_player.swarm_footmen.ants) == 0

@@ -220,14 +220,38 @@ class Swarm(Stage):
 
         return CollisionShape(center, radius)
 
+    def _attack(self, defender):
+        """Engage ``defender`` swarm, potentially removing its units."""
+        if self.is_fast_moving():
+            return
+        engaged_self = set()
+        engaged_other = set()
+        remove_indices = []
+        range_sq = self.attack_range * self.attack_range
+        for i, (ax, ay) in enumerate(self.ants):
+            for j, (dx, dy) in enumerate(defender.ants):
+                if (ax - dx) ** 2 + (ay - dy) ** 2 <= range_sq:
+                    engaged_self.add(i)
+                    engaged_other.add(j)
+                    if random.random() < self.kill_probability:
+                        remove_indices.append(j)
+                    break
+        for j in sorted(set(remove_indices), reverse=True):
+            defender.ants.pop(j)
+        if remove_indices:
+            defender._invalidate_centroid_cache()
+        self.engaged.update(engaged_self)
+        defender.engaged.update(engaged_other)
+
     def onCollision(self, stage):
-        """Record collisions with other swarms."""
+        """Record collisions and resolve combat with enemy swarms."""
         if self.owner:
             if self.owner.isEnemy(stage):
                 self.colliding_swarms.append(stage)
+                self._attack(stage)
         else:
-            if isinstance(stage, Swarm) and stage is not self:
-                self.colliding_swarms.append(stage)
+            self.colliding_swarms.append(stage)
+            self._attack(stage)
 
     def first_flag(self):
         return self.queue[0] if self.queue else None
