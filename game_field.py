@@ -10,6 +10,7 @@ from swarm import (
     ARCHER_KILL_PROBABILITY,
 )
 from ai_player import AIPlayer
+from human_player import HumanPlayer
 from flag import NormalFlag, FastFlag, StopFlag
 
 
@@ -51,51 +52,39 @@ class GameField(Stage):
         self.active_group = self.GROUP_FOOTMEN
         self.active_flag_idx = 0
 
-        # Player-controlled swarms
-        self.swarm_footmen = Swarm(
-            (255, 0, 0),
-            self.GROUP_FOOTMEN,
-            self.FLAG_COLOR_RED,
-            width=width,
-            height=height,
-            attack_range=ATTACK_RANGE,
-            kill_probability=KILL_PROBABILITY,
-        )
-        self.swarm_archers = Swarm(
-            (255, 0, 0),
-            self.GROUP_ARCHERS,
-            self.FLAG_COLOR_RED,
-            shape="semicircle",
-            width=width,
-            height=height,
-            attack_range=ARCHER_ATTACK_RANGE,
-            kill_probability=ARCHER_KILL_PROBABILITY,
-        )
-
-        # Spawn units and create AI player
+        # Create players and their swarms
         occupied = set()
-        self.swarm_footmen.spawn(
+        self.human_player = HumanPlayer(
+            width,
+            height,
             self.NUM_FOOTMEN,
-            (0, width * 0.25),
-            (height * 0.75, height),
-            occupied,
-        )
-        self.swarm_archers.spawn(
             self.NUM_ARCHERS,
-            (0, width * 0.25),
-            (0, height * 0.25),
+            occupied,
+            group_footmen=self.GROUP_FOOTMEN,
+            group_archers=self.GROUP_ARCHERS,
+            color=(255, 0, 0),
+            flag_color=self.FLAG_COLOR_RED,
+        )
+        self.ai_player = AIPlayer(
+            width,
+            height,
+            self.NUM_ANTS_BLUE,
+            self.NUM_ARCHERS_BLUE,
             occupied,
         )
 
-        self.ai_player = AIPlayer(width, height, self.NUM_ANTS_BLUE, self.NUM_ARCHERS_BLUE, occupied)
+        # Register enemies
+        self.human_player.enemies.append(self.ai_player)
+        self.ai_player.enemies.append(self.human_player)
+
+        self.swarm_footmen = self.human_player.swarm_footmen
+        self.swarm_archers = self.human_player.swarm_archers
 
         # Organise stage hierarchy
-        self.add_stage(self.swarm_footmen)
-        self.add_stage(self.swarm_archers)
+        self.add_stage(self.human_player)
         self.add_stage(self.ai_player)
 
-        self.swarm_footmen.show()
-        self.swarm_archers.show()
+        self.human_player.show()
         self.ai_player.show()
 
         self.flag_queues = {

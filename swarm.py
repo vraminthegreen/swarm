@@ -162,6 +162,7 @@ class Swarm(Stage):
         min_distance=4,
         attack_range=ATTACK_RANGE,
         kill_probability=KILL_PROBABILITY,
+        owner=None,
     ):
         super().__init__()
         self.ants = []
@@ -182,6 +183,7 @@ class Swarm(Stage):
         self.min_distance = min_distance
         self.attack_range = attack_range
         self.kill_probability = kill_probability
+        self.owner = owner
 
         self.queue = OrderQueue()
         self.add_stage(self.queue)
@@ -220,8 +222,12 @@ class Swarm(Stage):
 
     def onCollision(self, stage):
         """Record collisions with other swarms."""
-        if isinstance(stage, Swarm) and stage is not self:
-            self.colliding_swarms.append(stage)
+        if self.owner:
+            if self.owner.isEnemy(stage):
+                self.colliding_swarms.append(stage)
+        else:
+            if isinstance(stage, Swarm) and stage is not self:
+                self.colliding_swarms.append(stage)
 
     def first_flag(self):
         return self.queue[0] if self.queue else None
