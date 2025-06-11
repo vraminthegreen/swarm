@@ -52,7 +52,14 @@ class GameField(Stage):
         self.active_flag_idx = 0
 
         # Player-controlled swarms
-        self.swarm_footmen = Swarm((255, 0, 0), self.GROUP_FOOTMEN, self.FLAG_COLOR_RED, width=width, height=height)
+        self.swarm_footmen = Swarm(
+            (255, 0, 0),
+            self.GROUP_FOOTMEN,
+            self.FLAG_COLOR_RED,
+            width=width,
+            height=height,
+            attack_range=ATTACK_RANGE,
+        )
         self.swarm_archers = Swarm(
             (255, 0, 0),
             self.GROUP_ARCHERS,
@@ -60,6 +67,7 @@ class GameField(Stage):
             shape="semicircle",
             width=width,
             height=height,
+            attack_range=ARCHER_ATTACK_RANGE,
         )
 
         # Spawn units and create AI player
@@ -169,22 +177,22 @@ class GameField(Stage):
     # Combat resolution
     # ------------------------------------------------------------------
     def _resolve_combat(self):
-        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_footmen, ATTACK_RANGE, KILL_PROBABILITY)
-        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_archers, ATTACK_RANGE, KILL_PROBABILITY)
-        self._handle_combat(self.swarm_archers, self.ai_player.swarm_footmen, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
-        self._handle_combat(self.swarm_archers, self.ai_player.swarm_archers, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
-        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_footmen, ATTACK_RANGE, KILL_PROBABILITY)
-        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_archers, ATTACK_RANGE, KILL_PROBABILITY)
-        self._handle_combat(self.ai_player.swarm_archers, self.swarm_footmen, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
-        self._handle_combat(self.ai_player.swarm_archers, self.swarm_archers, ARCHER_ATTACK_RANGE, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_footmen, KILL_PROBABILITY)
+        self._handle_combat(self.swarm_footmen, self.ai_player.swarm_archers, KILL_PROBABILITY)
+        self._handle_combat(self.swarm_archers, self.ai_player.swarm_footmen, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.swarm_archers, self.ai_player.swarm_archers, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_footmen, KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_footmen, self.swarm_archers, KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_archers, self.swarm_footmen, ARCHER_KILL_PROBABILITY)
+        self._handle_combat(self.ai_player.swarm_archers, self.swarm_archers, ARCHER_KILL_PROBABILITY)
 
-    def _handle_combat(self, attackers, defenders, attack_range, kill_prob):
+    def _handle_combat(self, attackers, defenders, kill_prob):
         if attackers.is_fast_moving():
             return
         engaged_attackers = set()
         engaged_defenders = set()
         remove_indices = []
-        range_sq = attack_range * attack_range
+        range_sq = attackers.attack_range * attackers.attack_range
         for i, (ax, ay) in enumerate(attackers.ants):
             for j, (dx, dy) in enumerate(defenders.ants):
                 if (ax - dx) ** 2 + (ay - dy) ** 2 <= range_sq:

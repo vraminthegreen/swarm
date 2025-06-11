@@ -19,7 +19,9 @@ def test_swarm_collision_shape():
     shape = swarm.getCollisionShape()
     assert isinstance(shape, CollisionShape)
     assert shape.center == (0, 5)
-    assert shape.radius == 5
+    # The collision shape radius now includes the swarm's attack range
+    # which expands the radius beyond the ants' positions.
+    assert shape.radius == 17
 
 
 def test_swarm_collision_shape_empty():
