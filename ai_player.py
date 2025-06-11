@@ -1,4 +1,4 @@
-from stage import Stage
+from player import Player
 from swarm import (
     Swarm,
     ATTACK_RANGE,
@@ -13,7 +13,7 @@ import random
 TICKS_PER_SECOND = 20.0
 
 
-class AIPlayer(Stage):
+class AIPlayer(Player):
     """Simple AI controller for the blue team."""
 
     def __init__(self, width, height, num_footmen, num_archers, occupied):
@@ -39,6 +39,8 @@ class AIPlayer(Stage):
             attack_range=ARCHER_ATTACK_RANGE,
             kill_probability=ARCHER_KILL_PROBABILITY,
         )
+        self.swarm_footmen.owner = self
+        self.swarm_archers.owner = self
         self.add_stage(self.swarm_footmen)
         self.add_stage(self.swarm_archers)
         self.swarm_footmen.show()
