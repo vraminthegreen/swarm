@@ -152,11 +152,11 @@ class GameField(Stage):
     # ------------------------------------------------------------------
     # Simulation
     # ------------------------------------------------------------------
-    def tick(self, dt):
-        """Advance children first, then resolve combat."""
-        for child in self._children:
-            child.tick(dt)
-        self._tick(dt)
+    # def tick(self, dt):
+    #     """Advance children first, then resolve combat."""
+    #     for child in self._children:
+    #         child.tick(dt)
+    #     self._tick(dt)
 
     def _tick(self, dt):
         self.swarm_footmen.engaged = set()
