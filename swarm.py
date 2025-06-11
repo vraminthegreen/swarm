@@ -161,6 +161,7 @@ class Swarm(Stage):
         height=480,
         min_distance=4,
         attack_range=ATTACK_RANGE,
+        kill_probability=KILL_PROBABILITY,
     ):
         super().__init__()
         self.ants = []
@@ -180,6 +181,7 @@ class Swarm(Stage):
         self.height = height
         self.min_distance = min_distance
         self.attack_range = attack_range
+        self.kill_probability = kill_probability
 
         self.queue = OrderQueue()
         self.add_stage(self.queue)

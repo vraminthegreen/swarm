@@ -1,5 +1,11 @@
 from stage import Stage
-from swarm import Swarm, ATTACK_RANGE, ARCHER_ATTACK_RANGE
+from swarm import (
+    Swarm,
+    ATTACK_RANGE,
+    ARCHER_ATTACK_RANGE,
+    KILL_PROBABILITY,
+    ARCHER_KILL_PROBABILITY,
+)
 from flag import NormalFlag, ArcherFlag
 import random
 
@@ -21,6 +27,7 @@ class AIPlayer(Stage):
             width=width,
             height=height,
             attack_range=ATTACK_RANGE,
+            kill_probability=KILL_PROBABILITY,
         )
         self.swarm_archers = Swarm(
             (0, 255, 255),
@@ -30,6 +37,7 @@ class AIPlayer(Stage):
             width=width,
             height=height,
             attack_range=ARCHER_ATTACK_RANGE,
+            kill_probability=ARCHER_KILL_PROBABILITY,
         )
         self.add_stage(self.swarm_footmen)
         self.add_stage(self.swarm_archers)
