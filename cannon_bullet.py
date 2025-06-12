@@ -23,7 +23,8 @@ class CannonBullet(Stage):
         else:
             self.dir = (dx / self.distance, dy / self.distance)
         self.traveled = 0.0
-        self.color = (255, 255, 255)
+        # Use a light blue "plasma" color for the projectile
+        self.color = (150, 220, 255)
 
     def getPosition(self):
         return self.pos
