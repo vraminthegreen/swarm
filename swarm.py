@@ -252,25 +252,26 @@ class Swarm(Stage):
                 if (ax - dx) ** 2 + (ay - dy) ** 2 <= range_sq:
                     engaged_self.add(i)
                     engaged_other.add(j)
-                    if self.particle_shot is not None:
-                        dist = math.hypot(dx - ax, dy - ay)
-                        if dist == 0:
-                            px, py = ax, ay
-                        else:
-                            px = ax + (dx - ax) / dist * PARTICLE_DISTANCE
-                            py = ay + (dy - ay) / dist * PARTICLE_DISTANCE
-                        self.particle_shot.addParticle((px, py))
-                    if self.particle_arrow is not None:
-                        dist = math.hypot(dx - ax, dy - ay)
-                        if dist == 0:
-                            start = (ax, ay)
-                        else:
-                            start = (
-                                ax + (dx - ax) / dist * PARTICLE_DISTANCE,
-                                ay + (dy - ay) / dist * PARTICLE_DISTANCE,
-                            )
-                        self.particle_arrow.addParticle(start, (dx, dy))
-                    if random.random() < self.kill_probability:
+                    hit = random.random() < self.kill_probability
+                    if hit:
+                        if self.particle_shot is not None:
+                            dist = math.hypot(dx - ax, dy - ay)
+                            if dist == 0:
+                                px, py = ax, ay
+                            else:
+                                px = ax + (dx - ax) / dist * PARTICLE_DISTANCE
+                                py = ay + (dy - ay) / dist * PARTICLE_DISTANCE
+                            self.particle_shot.addParticle((px, py))
+                        if self.particle_arrow is not None:
+                            dist = math.hypot(dx - ax, dy - ay)
+                            if dist == 0:
+                                start = (ax, ay)
+                            else:
+                                start = (
+                                    ax + (dx - ax) / dist * PARTICLE_DISTANCE,
+                                    ay + (dy - ay) / dist * PARTICLE_DISTANCE,
+                                )
+                            self.particle_arrow.addParticle(start, (dx, dy))
                         remove_indices.append(j)
                     break
         for j in sorted(set(remove_indices), reverse=True):
