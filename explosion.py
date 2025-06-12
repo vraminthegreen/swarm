@@ -5,17 +5,18 @@ from stage import Stage
 class Explosion(Stage):
     """Expanding circle animation used for cannon impacts."""
 
-    def __init__(self, pos, max_radius=50, duration=15):
+    def __init__(self, pos, max_radius=50, duration=15, owner=None):
         super().__init__()
         self.pos = pos
         self.max_radius = max_radius
         self.duration = duration
         self.age = 0
         self.start_radius = 4
+        self.owner = owner
 
     def current_radius(self):
         """Return the current radius of the explosion."""
-        frac = min(self.age / self.duration, 1)
+        frac = min((self.age * 2) / self.duration, 1)
         progress = 1 - (1 - frac) ** 2
         return self.start_radius + (self.max_radius - self.start_radius) * progress
 
@@ -30,7 +31,7 @@ class Explosion(Stage):
     def _draw(self, screen):
         if self.age > self.duration:
             return
-        frac = min(self.age / self.duration, 1)
+        frac = min((self.age * 2) / self.duration, 1)
         # Ease-out quadratic: fast start, slow end
         progress = 1 - (1 - frac) ** 2
         radius = self.start_radius + (self.max_radius - self.start_radius) * progress

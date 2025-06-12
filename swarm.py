@@ -22,6 +22,10 @@ ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
 # Distance from attacker to display particle effects
 PARTICLE_DISTANCE = 5
 
+# Cannon firing range
+MIN_SHOT_RANGE = 50
+MAX_SHOT_RANGE = 500
+
 
 def lighten(color, factor=0.5):
     """Return a lighter variant of the given RGB color."""
@@ -586,13 +590,26 @@ class SwarmCannon(Swarm):
         return
 
     def _maybe_fire_bullet(self):
-        """Fire a projectile toward the center occasionally."""
+        """Fire at a random enemy swarm within range occasionally."""
+        if not self.owner:
+            return
         for x, y in self.ants:
             if random.random() < 0.002:
-                target = (self.width / 2, self.height / 2)
-                bullet = CannonBullet(self.owner, (x, y), target)
-                self.add_stage(bullet)
-                bullet.show()
+                targets = []
+                for enemy in self.owner.enemies:
+                    for stage in getattr(enemy, "_children", []):
+                        if isinstance(stage, Swarm):
+                            center = stage.compute_centroid()
+                            if center is None:
+                                continue
+                            dist = math.hypot(center[0] - x, center[1] - y)
+                            if MIN_SHOT_RANGE <= dist <= MAX_SHOT_RANGE:
+                                targets.append(center)
+                if targets:
+                    target = random.choice(targets)
+                    bullet = CannonBullet(self.owner, (x, y), target)
+                    self.add_stage(bullet)
+                    bullet.show()
 
     def _tick(self, dt):
         # Ensure orientation list matches current ants
