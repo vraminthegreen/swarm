@@ -18,16 +18,42 @@ def init_pygame():
     pygame.quit()
 
 
-def test_particle_added_on_attack():
-    attacker = Swarm((255, 0, 0), 1, (255, 100, 100), width=100, height=100, show_particles=True)
+def test_particle_added_on_kill():
+    attacker = Swarm(
+        (255, 0, 0),
+        1,
+        (255, 100, 100),
+        width=100,
+        height=100,
+        show_particles=True,
+    )
+    defender = Swarm((0, 0, 255), 2, (255, 100, 100), width=100, height=100)
+    attacker.ants = [[10, 10]]
+    defender.ants = [[11, 10]]
+    attacker.kill_probability = 1.0
+    attacker.onCollision(defender)
+    assert len(attacker.particle_shot._particles) == 1
+    px, py = attacker.particle_shot._particles[0]["pos"]
+    expected_x = 10 + PARTICLE_DISTANCE
+    expected_y = 10
+    assert px == pytest.approx(expected_x)
+    assert py == pytest.approx(expected_y)
+    assert len(defender.ants) == 0
+
+
+def test_no_particle_when_attack_misses():
+    attacker = Swarm(
+        (255, 0, 0),
+        1,
+        (255, 100, 100),
+        width=100,
+        height=100,
+        show_particles=True,
+    )
     defender = Swarm((0, 0, 255), 2, (255, 100, 100), width=100, height=100)
     attacker.ants = [[10, 10]]
     defender.ants = [[11, 10]]
     attacker.kill_probability = 0.0
     attacker.onCollision(defender)
-    assert len(attacker.particle_shot._particles) == 1
-    px, py = attacker.particle_shot._particles[0]['pos']
-    expected_x = 10 + PARTICLE_DISTANCE
-    expected_y = 10
-    assert px == pytest.approx(expected_x)
-    assert py == pytest.approx(expected_y)
+    assert len(attacker.particle_shot._particles) == 0
+    assert len(defender.ants) == 1

@@ -33,7 +33,35 @@ def test_particlearrow_moves_and_expires():
     assert len(pa._particles) == 0
 
 
-def test_arrow_particle_added_on_attack():
+def test_arrow_particle_added_on_kill():
+    attacker = Swarm(
+        (255, 0, 0),
+        1,
+        (255, 100, 100),
+        width=100,
+        height=100,
+        attack_range=ARCHER_ATTACK_RANGE,
+        arrow_particles=True,
+    )
+    defender = Swarm(
+        (0, 0, 255),
+        2,
+        (255, 100, 100),
+        width=100,
+        height=100,
+    )
+    attacker.ants = [[10, 10]]
+    defender.ants = [[20, 10]]
+    attacker.kill_probability = 1.0
+    attacker.onCollision(defender)
+    assert len(attacker.particle_arrow._particles) == 1
+    p = attacker.particle_arrow._particles[0]
+    assert p["start"] == pytest.approx((15, 10))
+    assert p["end"] == pytest.approx((20, 10))
+    assert len(defender.ants) == 0
+
+
+def test_arrow_particle_not_added_on_miss():
     attacker = Swarm(
         (255, 0, 0),
         1,
@@ -54,8 +82,6 @@ def test_arrow_particle_added_on_attack():
     defender.ants = [[20, 10]]
     attacker.kill_probability = 0.0
     attacker.onCollision(defender)
-    assert len(attacker.particle_arrow._particles) == 1
-    p = attacker.particle_arrow._particles[0]
-    assert p["start"] == pytest.approx((15, 10))
-    assert p["end"] == pytest.approx((20, 10))
+    assert len(attacker.particle_arrow._particles) == 0
+    assert len(defender.ants) == 1
 
