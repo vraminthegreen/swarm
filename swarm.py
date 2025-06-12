@@ -541,7 +541,7 @@ class SwarmArchers(Swarm):
 class SwarmCannon(Swarm):
     """Slow moving non-attacking swarm represented by triangles."""
 
-    BASE_SPEED = 0.1
+    BASE_SPEED = 0.15
 
     def __init__(
         self,
@@ -583,8 +583,6 @@ class SwarmCannon(Swarm):
         if len(self.orientations) < len(self.ants):
             self.orientations.extend([0.0] * (len(self.ants) - len(self.orientations)))
 
-        old_ants = [list(a) for a in self.ants]
-
         flag = self.first_flag()
         flags = [flag] if flag else []
         all_ants = self.ants
@@ -595,13 +593,14 @@ class SwarmCannon(Swarm):
         resolved = self._resolve_positions(self.ants, proposed)
 
         new_orientations = []
-        for (ox, oy), (nx, ny), ori in zip(old_ants, resolved, self.orientations):
-            dx = nx - ox
-            dy = ny - oy
-            if dx == 0 and dy == 0:
-                new_orientations.append(ori)
-            else:
+        for (nx, ny), ori in zip(resolved, self.orientations):
+            nearest = self._nearest_flag(nx, ny, flags)
+            if nearest and nearest.pos is not None:
+                dx = nearest.pos[0] - nx
+                dy = nearest.pos[1] - ny
                 new_orientations.append(math.atan2(dy, dx))
+            else:
+                new_orientations.append(ori)
 
         self.ants = [list(p) for p in resolved]
         self.orientations = new_orientations
