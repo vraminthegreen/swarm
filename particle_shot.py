@@ -6,7 +6,7 @@ from stage import Stage
 class ParticleShot(Stage):
     """Stage element displaying temporary particle effects."""
 
-    def __init__(self, cycles=3, visible_frames=3, hidden_frames=3, color=(255, 255, 150)):
+    def __init__(self, cycles=3, visible_frames=1, hidden_frames=2, color=(255, 255, 150)):
         super().__init__()
         self.cycles = cycles
         self.visible_frames = visible_frames
@@ -49,4 +49,4 @@ class ParticleShot(Stage):
         for p in self._particles:
             if p["visible"]:
                 x, y = p["pos"]
-                pygame.draw.circle(screen, self.color, (int(x), int(y)), 2)
+                pygame.draw.circle(screen, self.color, (int(x), int(y)), 1)

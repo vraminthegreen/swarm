@@ -18,7 +18,7 @@ ARCHER_ATTACK_RANGE = 60
 ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
 
 # Distance from attacker to display particle effects
-PARTICLE_DISTANCE = 3
+PARTICLE_DISTANCE = 5
 
 
 def lighten(color, factor=0.5):
