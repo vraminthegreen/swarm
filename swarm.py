@@ -6,6 +6,7 @@ from stage import Stage
 from order_queue import OrderQueue
 from flag import FastFlag
 from collision_shape import CollisionShape
+from particle_shot import ParticleShot
 
 DOT_SIZE = 4
 BACKGROUND_COLOR = (0, 0, 0)
@@ -15,6 +16,9 @@ ATTACK_RANGE = 12
 KILL_PROBABILITY = 0.02
 ARCHER_ATTACK_RANGE = 60
 ARCHER_KILL_PROBABILITY = KILL_PROBABILITY / 3
+
+# Distance from attacker to display particle effects
+PARTICLE_DISTANCE = 3
 
 
 def lighten(color, factor=0.5):
@@ -163,6 +167,7 @@ class Swarm(Stage):
         attack_range=ATTACK_RANGE,
         kill_probability=KILL_PROBABILITY,
         owner=None,
+        show_particles=False,
     ):
         super().__init__()
         self.ants = []
@@ -184,6 +189,12 @@ class Swarm(Stage):
         self.attack_range = attack_range
         self.kill_probability = kill_probability
         self.owner = owner
+
+        self.particle_shot = None
+        if show_particles:
+            self.particle_shot = ParticleShot()
+            self.add_stage(self.particle_shot)
+            self.particle_shot.show()
 
         self.queue = OrderQueue()
         self.add_stage(self.queue)
@@ -233,6 +244,14 @@ class Swarm(Stage):
                 if (ax - dx) ** 2 + (ay - dy) ** 2 <= range_sq:
                     engaged_self.add(i)
                     engaged_other.add(j)
+                    if self.particle_shot is not None:
+                        dist = math.hypot(dx - ax, dy - ay)
+                        if dist == 0:
+                            px, py = ax, ay
+                        else:
+                            px = ax + (dx - ax) / dist * PARTICLE_DISTANCE
+                            py = ay + (dy - ay) / dist * PARTICLE_DISTANCE
+                        self.particle_shot.addParticle((px, py))
                     if random.random() < self.kill_probability:
                         remove_indices.append(j)
                     break

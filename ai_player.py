@@ -24,6 +24,7 @@ class AIPlayer(Player):
             (0, 255, 255),
             5,
             (0, 255, 255),
+            show_particles=True,
             width=width,
             height=height,
             attack_range=ATTACK_RANGE,

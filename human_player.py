@@ -16,6 +16,7 @@ class HumanPlayer(Player):
             color,
             group_footmen,
             flag_color,
+            show_particles=True,
             width=width,
             height=height,
             attack_range=ATTACK_RANGE,
