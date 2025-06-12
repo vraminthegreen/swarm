@@ -1,5 +1,13 @@
 from player import Player
-from swarm import Swarm, ATTACK_RANGE, ARCHER_ATTACK_RANGE, KILL_PROBABILITY, ARCHER_KILL_PROBABILITY
+from swarm import (
+    Swarm,
+    SwarmFootmen,
+    SwarmArchers,
+    ATTACK_RANGE,
+    ARCHER_ATTACK_RANGE,
+    KILL_PROBABILITY,
+    ARCHER_KILL_PROBABILITY,
+)
 
 
 class HumanPlayer(Player):
@@ -12,22 +20,19 @@ class HumanPlayer(Player):
         self.width = width
         self.height = height
 
-        self.swarm_footmen = Swarm(
+        self.swarm_footmen = SwarmFootmen(
             color,
             group_footmen,
             flag_color,
-            show_particles=True,
             width=width,
             height=height,
             attack_range=ATTACK_RANGE,
             kill_probability=KILL_PROBABILITY,
         )
-        self.swarm_archers = Swarm(
+        self.swarm_archers = SwarmArchers(
             color,
             group_archers,
             flag_color,
-            shape="semicircle",
-            arrow_particles=True,
             width=width,
             height=height,
             attack_range=ARCHER_ATTACK_RANGE,

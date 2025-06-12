@@ -153,7 +153,7 @@ def draw_dotted_circle(screen, center, radius, color=(255, 165, 0), segments=60)
 
 
 class Swarm(Stage):
-    """Group of units of one type belonging to a single player."""
+    """Base group of units belonging to a single player."""
 
     def __init__(
         self,
@@ -435,4 +435,68 @@ class Swarm(Stage):
             if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
                 if len(self.queue) > 1:
                     self.queue.pop(0)
+
+
+class SwarmFootmen(Swarm):
+    """Swarm representing melee footmen units."""
+
+    def __init__(
+        self,
+        color,
+        group_id,
+        flag_color,
+        width=640,
+        height=480,
+        min_distance=4,
+        attack_range=ATTACK_RANGE,
+        kill_probability=KILL_PROBABILITY,
+        owner=None,
+        show_particles=True,
+    ):
+        super().__init__(
+            color,
+            group_id,
+            flag_color,
+            shape="circle",
+            width=width,
+            height=height,
+            min_distance=min_distance,
+            attack_range=attack_range,
+            kill_probability=kill_probability,
+            owner=owner,
+            show_particles=show_particles,
+            arrow_particles=False,
+        )
+
+
+class SwarmArchers(Swarm):
+    """Swarm representing ranged archer units."""
+
+    def __init__(
+        self,
+        color,
+        group_id,
+        flag_color,
+        width=640,
+        height=480,
+        min_distance=4,
+        attack_range=ARCHER_ATTACK_RANGE,
+        kill_probability=ARCHER_KILL_PROBABILITY,
+        owner=None,
+        show_particles=False,
+    ):
+        super().__init__(
+            color,
+            group_id,
+            flag_color,
+            shape="semicircle",
+            width=width,
+            height=height,
+            min_distance=min_distance,
+            attack_range=attack_range,
+            kill_probability=kill_probability,
+            owner=owner,
+            show_particles=show_particles,
+            arrow_particles=True,
+        )
 
