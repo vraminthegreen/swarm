@@ -8,7 +8,8 @@ from explosion import Explosion
 class CannonBullet(Stage):
     """Projectile moving from start to end position with a pulsing size."""
 
-    BASE_SPEED = 4
+    # Increase base projectile speed slightly for a snappier feel
+    BASE_SPEED = 4.8
 
     def __init__(self, owner, pos1, pos2):
         super().__init__()
