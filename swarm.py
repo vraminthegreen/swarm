@@ -588,7 +588,7 @@ class SwarmCannon(Swarm):
     def _maybe_fire_bullet(self):
         """Fire a projectile toward the center occasionally."""
         for x, y in self.ants:
-            if random.random() < 0.01:
+            if random.random() < 0.002:
                 target = (self.width / 2, self.height / 2)
                 bullet = CannonBullet(self.owner, (x, y), target)
                 self.add_stage(bullet)

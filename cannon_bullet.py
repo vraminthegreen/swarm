@@ -2,6 +2,7 @@ import math
 import pygame
 
 from stage import Stage
+from explosion import Explosion
 
 
 class CannonBullet(Stage):
@@ -36,6 +37,9 @@ class CannonBullet(Stage):
             self.pos = self.end
             parent = getattr(self, "_parent", None)
             if parent is not None:
+                explosion = Explosion(self.pos)
+                parent.add_stage(explosion)
+                explosion.show()
                 parent.remove_stage(self)
             return
         self.pos = (
