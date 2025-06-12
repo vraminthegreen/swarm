@@ -7,6 +7,7 @@ from order_queue import OrderQueue
 from flag import FastFlag
 from collision_shape import CollisionShape
 from particle_shot import ParticleShot
+from cannon_bullet import CannonBullet
 
 DOT_SIZE = 4
 TRIANGLE_SIZE = 14
@@ -472,6 +473,14 @@ class Swarm(Stage):
             if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
                 if len(self.queue) > 1:
                     self.queue.pop(0)
+
+        # Random chance for each cannon to fire a bullet toward the center
+        for x, y in self.ants:
+            if random.random() < 0.01:
+                target = (self.width / 2, self.height / 2)
+                bullet = CannonBullet(self.owner, (x, y), target)
+                self.add_stage(bullet)
+                bullet.show()
 
 
 class SwarmFootmen(Swarm):
