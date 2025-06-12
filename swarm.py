@@ -168,6 +168,7 @@ class Swarm(Stage):
         kill_probability=KILL_PROBABILITY,
         owner=None,
         show_particles=False,
+        arrow_particles=False,
     ):
         super().__init__()
         self.ants = []
@@ -195,6 +196,13 @@ class Swarm(Stage):
             self.particle_shot = ParticleShot()
             self.add_stage(self.particle_shot)
             self.particle_shot.show()
+
+        self.particle_arrow = None
+        if arrow_particles:
+            from particle_arrow import ParticleArrow
+            self.particle_arrow = ParticleArrow()
+            self.add_stage(self.particle_arrow)
+            self.particle_arrow.show()
 
         self.queue = OrderQueue()
         self.add_stage(self.queue)
@@ -252,6 +260,16 @@ class Swarm(Stage):
                             px = ax + (dx - ax) / dist * PARTICLE_DISTANCE
                             py = ay + (dy - ay) / dist * PARTICLE_DISTANCE
                         self.particle_shot.addParticle((px, py))
+                    if self.particle_arrow is not None:
+                        dist = math.hypot(dx - ax, dy - ay)
+                        if dist == 0:
+                            start = (ax, ay)
+                        else:
+                            start = (
+                                ax + (dx - ax) / dist * PARTICLE_DISTANCE,
+                                ay + (dy - ay) / dist * PARTICLE_DISTANCE,
+                            )
+                        self.particle_arrow.addParticle(start, (dx, dy))
                     if random.random() < self.kill_probability:
                         remove_indices.append(j)
                     break

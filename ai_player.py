@@ -35,6 +35,7 @@ class AIPlayer(Player):
             6,
             (0, 255, 255),
             shape="semicircle",
+            arrow_particles=True,
             width=width,
             height=height,
             attack_range=ARCHER_ATTACK_RANGE,
