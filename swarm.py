@@ -9,7 +9,7 @@ from collision_shape import CollisionShape
 from particle_shot import ParticleShot
 
 DOT_SIZE = 4
-TRIANGLE_SIZE = 7
+TRIANGLE_SIZE = 14
 BACKGROUND_COLOR = (0, 0, 0)
 
 # Combat configuration
@@ -53,7 +53,15 @@ def render_text_with_outline(font, text, text_color, outline_color):
     return image
 
 
-def draw_ants(screen, ants, color, engaged=None, engaged_color=None, shape="circle"):
+def draw_ants(
+    screen,
+    ants,
+    color,
+    engaged=None,
+    engaged_color=None,
+    shape="circle",
+    orientations=None,
+):
     """Draw ants on ``screen`` with optional highlighting for engaged ones."""
     for i, (x, y) in enumerate(ants):
         c = color
@@ -76,10 +84,22 @@ def draw_ants(screen, ants, color, engaged=None, engaged_color=None, shape="circ
             )
         elif shape == "triangle":
             half = TRIANGLE_SIZE // 2
+            angle = 0.0
+            if orientations and i < len(orientations):
+                angle = orientations[i]
             points = [
-                (center[0], center[1] - half),
-                (center[0] - half, center[1] + half),
-                (center[0] + half, center[1] + half),
+                (
+                    center[0] + math.cos(angle) * half,
+                    center[1] + math.sin(angle) * half,
+                ),
+                (
+                    center[0] + math.cos(angle + 2 * math.pi / 3) * half,
+                    center[1] + math.sin(angle + 2 * math.pi / 3) * half,
+                ),
+                (
+                    center[0] + math.cos(angle - 2 * math.pi / 3) * half,
+                    center[1] + math.sin(angle - 2 * math.pi / 3) * half,
+                ),
             ]
             pygame.draw.polygon(screen, c, points)
         else:
@@ -323,7 +343,15 @@ class Swarm(Stage):
                     occupied.add((x, y))
 
     def _draw(self, screen):
-        draw_ants(screen, self.ants, self.color, self.engaged, self.engaged_color, self.shape)
+        draw_ants(
+            screen,
+            self.ants,
+            self.color,
+            self.engaged,
+            self.engaged_color,
+            self.shape,
+            getattr(self, "orientations", None),
+        )
         draw_group_banner(screen, self.ants, self.color, self.group_id, self.active)
         if self.queue:
             start_center = self.compute_centroid()
@@ -513,7 +541,7 @@ class SwarmArchers(Swarm):
 class SwarmCannon(Swarm):
     """Slow moving non-attacking swarm represented by triangles."""
 
-    BASE_SPEED = 0.3
+    BASE_SPEED = 0.1
 
     def __init__(
         self,
@@ -524,7 +552,7 @@ class SwarmCannon(Swarm):
         height=480,
         min_distance=4,
         owner=None,
-    ):
+        ):
         super().__init__(
             color,
             group_id,
@@ -539,12 +567,24 @@ class SwarmCannon(Swarm):
             show_particles=False,
             arrow_particles=False,
         )
+        self.orientations = []
+
+    def spawn(self, count, x_range, y_range, occupied, width=None, height=None, min_distance=None):
+        super().spawn(count, x_range, y_range, occupied, width, height, min_distance)
+        self.orientations = [0.0 for _ in self.ants]
 
     def _attack(self, defender):
         """Cannons do not attack."""
         return
 
     def _tick(self, dt):
+        # Ensure orientation list matches current ants
+        self.orientations = self.orientations[: len(self.ants)]
+        if len(self.orientations) < len(self.ants):
+            self.orientations.extend([0.0] * (len(self.ants) - len(self.orientations)))
+
+        old_ants = [list(a) for a in self.ants]
+
         flag = self.first_flag()
         flags = [flag] if flag else []
         all_ants = self.ants
@@ -552,7 +592,19 @@ class SwarmCannon(Swarm):
         if isinstance(flag, FastFlag):
             speed *= 1.5
         proposed = self._propose_moves(self.ants, flags, all_ants, speed)
-        self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
+        resolved = self._resolve_positions(self.ants, proposed)
+
+        new_orientations = []
+        for (ox, oy), (nx, ny), ori in zip(old_ants, resolved, self.orientations):
+            dx = nx - ox
+            dy = ny - oy
+            if dx == 0 and dy == 0:
+                new_orientations.append(ori)
+            else:
+                new_orientations.append(math.atan2(dy, dx))
+
+        self.ants = [list(p) for p in resolved]
+        self.orientations = new_orientations
         self._invalidate_centroid_cache()
 
         center = self.compute_centroid()
