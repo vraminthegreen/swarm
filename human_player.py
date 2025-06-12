@@ -27,6 +27,7 @@ class HumanPlayer(Player):
             group_archers,
             flag_color,
             shape="semicircle",
+            arrow_particles=True,
             width=width,
             height=height,
             attack_range=ARCHER_ATTACK_RANGE,
