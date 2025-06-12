@@ -456,6 +456,10 @@ class Swarm(Stage):
                 occupied_new.append(tuple(ants[i]))
         return new_ants
 
+    def _maybe_fire_bullet(self):
+        """Hook for subclasses to optionally fire a cannon bullet."""
+        return
+
     # ------------------------------------------------------------------
     # Simulation
     # ------------------------------------------------------------------
@@ -474,13 +478,8 @@ class Swarm(Stage):
                 if len(self.queue) > 1:
                     self.queue.pop(0)
 
-        # Random chance for each cannon to fire a bullet toward the center
-        for x, y in self.ants:
-            if random.random() < 0.01:
-                target = (self.width / 2, self.height / 2)
-                bullet = CannonBullet(self.owner, (x, y), target)
-                self.add_stage(bullet)
-                bullet.show()
+        # Allow subclasses to fire projectiles if desired
+        self._maybe_fire_bullet()
 
 
 class SwarmFootmen(Swarm):
@@ -586,6 +585,15 @@ class SwarmCannon(Swarm):
         """Cannons do not attack."""
         return
 
+    def _maybe_fire_bullet(self):
+        """Fire a projectile toward the center occasionally."""
+        for x, y in self.ants:
+            if random.random() < 0.01:
+                target = (self.width / 2, self.height / 2)
+                bullet = CannonBullet(self.owner, (x, y), target)
+                self.add_stage(bullet)
+                bullet.show()
+
     def _tick(self, dt):
         # Ensure orientation list matches current ants
         self.orientations = self.orientations[: len(self.ants)]
@@ -620,3 +628,5 @@ class SwarmCannon(Swarm):
             if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
                 if len(self.queue) > 1:
                     self.queue.pop(0)
+
+        self._maybe_fire_bullet()
