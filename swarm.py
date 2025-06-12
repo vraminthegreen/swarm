@@ -9,6 +9,7 @@ from collision_shape import CollisionShape
 from particle_shot import ParticleShot
 
 DOT_SIZE = 4
+TRIANGLE_SIZE = 7
 BACKGROUND_COLOR = (0, 0, 0)
 
 # Combat configuration
@@ -73,6 +74,14 @@ def draw_ants(screen, ants, color, engaged=None, engaged_color=None, shape="circ
                 (center[0] - radius, center[1] - radius),
                 (center[0] - radius, center[1] + radius),
             )
+        elif shape == "triangle":
+            half = TRIANGLE_SIZE // 2
+            points = [
+                (center[0], center[1] - half),
+                (center[0] - half, center[1] + half),
+                (center[0] + half, center[1] + half),
+            ]
+            pygame.draw.polygon(screen, c, points)
         else:
             pygame.draw.circle(screen, c, center, DOT_SIZE // 2)
 
@@ -500,3 +509,54 @@ class SwarmArchers(Swarm):
             arrow_particles=True,
         )
 
+
+class SwarmCannon(Swarm):
+    """Slow moving non-attacking swarm represented by triangles."""
+
+    BASE_SPEED = 0.3
+
+    def __init__(
+        self,
+        color,
+        group_id,
+        flag_color,
+        width=640,
+        height=480,
+        min_distance=4,
+        owner=None,
+    ):
+        super().__init__(
+            color,
+            group_id,
+            flag_color,
+            shape="triangle",
+            width=width,
+            height=height,
+            min_distance=min_distance,
+            attack_range=0,
+            kill_probability=0,
+            owner=owner,
+            show_particles=False,
+            arrow_particles=False,
+        )
+
+    def _attack(self, defender):
+        """Cannons do not attack."""
+        return
+
+    def _tick(self, dt):
+        flag = self.first_flag()
+        flags = [flag] if flag else []
+        all_ants = self.ants
+        speed = dt * self.BASE_SPEED
+        if isinstance(flag, FastFlag):
+            speed *= 1.5
+        proposed = self._propose_moves(self.ants, flags, all_ants, speed)
+        self.ants = [list(p) for p in self._resolve_positions(self.ants, proposed)]
+        self._invalidate_centroid_cache()
+
+        center = self.compute_centroid()
+        if flag and flag.pos is not None and center is not None:
+            if math.hypot(center[0] - flag.pos[0], center[1] - flag.pos[1]) < 40:
+                if len(self.queue) > 1:
+                    self.queue.pop(0)

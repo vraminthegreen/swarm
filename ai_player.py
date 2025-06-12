@@ -3,6 +3,7 @@ from swarm import (
     Swarm,
     SwarmFootmen,
     SwarmArchers,
+    SwarmCannon,
     ATTACK_RANGE,
     ARCHER_ATTACK_RANGE,
     KILL_PROBABILITY,
@@ -18,7 +19,15 @@ TICKS_PER_SECOND = 20.0
 class AIPlayer(Player):
     """Simple AI controller for the blue team."""
 
-    def __init__(self, width, height, num_footmen, num_archers, occupied):
+    def __init__(
+        self,
+        width,
+        height,
+        num_footmen,
+        num_archers,
+        occupied,
+        num_cannons=3,
+    ):
         super().__init__()
         self.width = width
         self.height = height
@@ -40,12 +49,23 @@ class AIPlayer(Player):
             attack_range=ARCHER_ATTACK_RANGE,
             kill_probability=ARCHER_KILL_PROBABILITY,
         )
+        self.swarm_cannon = SwarmCannon(
+            (0, 255, 255),
+            7,
+            (0, 255, 255),
+            width=width,
+            height=height,
+            owner=self,
+        )
         self.swarm_footmen.owner = self
         self.swarm_archers.owner = self
+        # SwarmCannon owner already set
         self.add_stage(self.swarm_footmen)
         self.add_stage(self.swarm_archers)
+        self.add_stage(self.swarm_cannon)
         self.swarm_footmen.show()
         self.swarm_archers.show()
+        self.swarm_cannon.show()
 
         self.swarm_footmen.spawn(
             num_footmen,
@@ -57,6 +77,12 @@ class AIPlayer(Player):
             num_archers,
             (width * 0.75, width),
             (height * 0.75, height),
+            occupied,
+        )
+        self.swarm_cannon.spawn(
+            num_cannons,
+            (width * 0.95, width),
+            (height * 0.45, height * 0.55),
             occupied,
         )
 

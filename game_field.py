@@ -25,9 +25,12 @@ class GameField(Stage):
     NUM_ARCHERS = 50
     NUM_ANTS_BLUE = 200
     NUM_ARCHERS_BLUE = 50
+    NUM_CANNONS = 3
+    NUM_CANNONS_BLUE = 3
 
     GROUP_FOOTMEN = 1
     GROUP_ARCHERS = 2
+    GROUP_CANNON = 3
 
     BACKGROUND_COLOR = (0, 0, 0)
     FLAG_COLOR_RED = (255, 100, 100)
@@ -62,6 +65,8 @@ class GameField(Stage):
             occupied,
             group_footmen=self.GROUP_FOOTMEN,
             group_archers=self.GROUP_ARCHERS,
+            group_cannon=self.GROUP_CANNON,
+            num_cannons=self.NUM_CANNONS,
             color=(255, 0, 0),
             flag_color=self.FLAG_COLOR_RED,
         )
@@ -71,6 +76,7 @@ class GameField(Stage):
             self.NUM_ANTS_BLUE,
             self.NUM_ARCHERS_BLUE,
             occupied,
+            num_cannons=self.NUM_CANNONS_BLUE,
         )
 
         # Register enemies
@@ -79,6 +85,8 @@ class GameField(Stage):
 
         self.swarm_footmen = self.human_player.swarm_footmen
         self.swarm_archers = self.human_player.swarm_archers
+        self.swarm_cannon = self.human_player.swarm_cannon
+        self.ai_swarm_cannon = self.ai_player.swarm_cannon
 
         # Organise stage hierarchy
         self.add_stage(self.human_player)
@@ -90,6 +98,7 @@ class GameField(Stage):
         self.flag_queues = {
             self.GROUP_FOOTMEN: self.swarm_footmen.queue,
             self.GROUP_ARCHERS: self.swarm_archers.queue,
+            self.GROUP_CANNON: self.swarm_cannon.queue,
         }
 
     # ------------------------------------------------------------------
@@ -102,6 +111,9 @@ class GameField(Stage):
                 return True
             if event.key == pygame.K_2:
                 self.active_group = self.GROUP_ARCHERS
+                return True
+            if event.key == pygame.K_3:
+                self.active_group = self.GROUP_CANNON
                 return True
             if event.key in (pygame.K_a, pygame.K_m):
                 flag_cls = NormalFlag if event.key == pygame.K_a else FastFlag
@@ -139,6 +151,7 @@ class GameField(Stage):
         screen.fill(self.BACKGROUND_COLOR)
         self.swarm_footmen.active = self.active_group == self.GROUP_FOOTMEN
         self.swarm_archers.active = self.active_group == self.GROUP_ARCHERS
+        self.swarm_cannon.active = self.active_group == self.GROUP_CANNON
 
         # Flag icons
         for idx, template in enumerate(self.flag_templates):
@@ -160,6 +173,8 @@ class GameField(Stage):
     def _tick(self, dt):
         self.swarm_footmen.engaged = set()
         self.swarm_archers.engaged = set()
+        self.swarm_cannon.engaged = set()
         self.ai_player.swarm_archers.engaged = set()
         self.ai_player.swarm_footmen.engaged = set()
+        self.ai_swarm_cannon.engaged = set()
 
