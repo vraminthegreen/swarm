@@ -275,7 +275,7 @@ class Swarm(Stage):
 
     def _attack(self, defender):
         """Engage ``defender`` swarm, potentially removing its units."""
-        if self.is_fast_moving():
+        if self.is_fast_moving() or not hasattr(defender, "ants"):
             return
         engaged_self = set()
         engaged_other = set()
