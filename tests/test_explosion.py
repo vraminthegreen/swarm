@@ -37,3 +37,9 @@ def test_explosion_radius_growth():
     r2 = exp.current_radius()
     assert r2 > r1
 
+
+def test_explosion_has_owner():
+    owner = object()
+    exp = Explosion((0, 0), max_radius=10, duration=3, owner=owner)
+    assert exp.owner is owner
+
