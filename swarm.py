@@ -368,12 +368,6 @@ class Swarm(Stage):
         shape = self.getCollisionShape()
         if shape is not None:
             draw_dotted_circle(screen, shape.center, shape.radius)
-        center = self.compute_centroid()
-        if center:
-            for other in self.colliding_swarms:
-                other_center = other.compute_centroid()
-                if other_center:
-                    pygame.draw.line(screen, (255, 0, 0), center, other_center, width=3)
         self.colliding_swarms.clear()
 
     # ------------------------------------------------------------------
