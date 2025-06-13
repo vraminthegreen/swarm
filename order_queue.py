@@ -4,9 +4,14 @@ from flag import Flag
 class OrderQueue(Stage):
     """Stage subclass managing an ordered list of Flag objects."""
 
-    def __init__(self):
+    def __init__(self, on_change=None):
         super().__init__()
         self._queue = []
+        self._on_change = on_change
+
+    def _notify(self):
+        if callable(self._on_change):
+            self._on_change()
 
     # ------------------------------------------------------------------
     # Basic list operations
@@ -17,6 +22,7 @@ class OrderQueue(Stage):
             raise TypeError("flag must be a Flag instance")
         self._queue.append(flag)
         self.add_stage(flag)
+        self._notify()
 
     def add_flag_at(self, pos, flag_cls=Flag):
         """Create a new flag instance at ``pos`` and append it."""
@@ -31,18 +37,21 @@ class OrderQueue(Stage):
             return None
         flag = self._queue.pop(index)
         self.remove_stage(flag)
+        self._notify()
         return flag
 
     def remove(self, flag):
         """Remove ``flag`` from the queue."""
         self._queue.remove(flag)
         self.remove_stage(flag)
+        self._notify()
 
     def clear(self):
         """Remove all flags from the queue."""
         for flag in list(self._queue):
             self.remove_stage(flag)
         self._queue.clear()
+        self._notify()
 
     # ------------------------------------------------------------------
     # Container protocol helpers

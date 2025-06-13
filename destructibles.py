@@ -62,6 +62,7 @@ class Destructibles(Player):
         self.width = width
         self.height = height
         self.trees = []
+        self._invalidators = []
         occupied = occupied if occupied is not None else set()
 
         for _ in range(num_trees):
@@ -76,4 +77,26 @@ class Destructibles(Player):
             self.add_stage(tree)
             tree.show()
             occupied.add((int(pos[0]), int(pos[1])))
+
+    def register_invalidator(self, func):
+        if callable(func):
+            self._invalidators.append(func)
+
+    def _notify_invalidator(self):
+        for cb in self._invalidators:
+            cb()
+
+    def add_stage(self, child):
+        super().add_stage(child)
+        if isinstance(child, Tree):
+            if child not in self.trees:
+                self.trees.append(child)
+            self._notify_invalidator()
+
+    def remove_stage(self, child):
+        super().remove_stage(child)
+        if isinstance(child, Tree):
+            if child in self.trees:
+                self.trees.remove(child)
+            self._notify_invalidator()
 
