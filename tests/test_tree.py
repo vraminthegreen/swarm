@@ -39,7 +39,7 @@ def test_tree_hit_reduces_hp_and_shakes(monkeypatch):
     hp_before = tree.hp
     tree.onCollision(swarm)
     assert tree.hp == hp_before - 1
-    assert tree._shake_steps[0] == pytest.approx((1.0, 0.0))
+    assert tree._shake_steps[0] == pytest.approx((0.5, 0.0))
 
 
 def test_tree_miss_no_damage(monkeypatch):

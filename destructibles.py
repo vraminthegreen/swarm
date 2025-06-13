@@ -9,7 +9,7 @@ import pygame
 class Tree(Stage):
     """Static destructible object with hit points."""
 
-    MAX_HP = 50
+    MAX_HP = 20
 
     def __init__(self, pos, size, owner=None):
         super().__init__()
@@ -31,7 +31,7 @@ class Tree(Stage):
             hit_prob = getattr(stage, "kill_probability", 1.0)
             if random.random() < hit_prob:
                 self.hp -= 1
-                amplitude = 1
+                amplitude = 0.5
                 for _ in range(3):
                     angle = random.uniform(0, 2 * math.pi)
                     dx = math.cos(angle) * amplitude
