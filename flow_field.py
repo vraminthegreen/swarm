@@ -1,4 +1,8 @@
-"""Simple grid based flow field pathfinding."""
+"""Simple grid-based flow field pathfinding.
+
+The field resolution is determined by ``cell_size`` which defaults to 1 so the
+flow is computed at pixel accuracy.
+"""
 
 from collections import deque
 from typing import Iterable, Tuple
@@ -9,12 +13,12 @@ from collision_shape import CollisionShape
 class FlowField:
     """Compute a basic flow field guiding units towards a goal."""
 
-    def __init__(self, width: int, height: int, cell_size: int = 20):
+    def __init__(self, width: int, height: int, cell_size: int = 1):
         self.width = width
         self.height = height
         self.cell_size = cell_size
-        self.grid_w = max(1, width // cell_size)
-        self.grid_h = max(1, height // cell_size)
+        self.grid_w = max(1, (width + cell_size - 1) // cell_size)
+        self.grid_h = max(1, (height + cell_size - 1) // cell_size)
         self._vectors = [[(0.0, 0.0) for _ in range(self.grid_w)] for _ in range(self.grid_h)]
         self.goal = None
         self.distances = [[0 for _ in range(self.grid_w)] for _ in range(self.grid_h)]
