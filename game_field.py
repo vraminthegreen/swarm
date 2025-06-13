@@ -171,11 +171,40 @@ class GameField(Stage):
         self.swarm_archers.active = self.active_group == self.GROUP_ARCHERS
         self.swarm_cannon.active = self.active_group == self.GROUP_CANNON
 
+        self._draw_active_flow_field(screen)
+
         # Flag icons
         for idx, template in enumerate(self.flag_templates):
             temp = template["cls"](None, self.FLAG_COLOR_RED)
             temp.show()
             temp.draw_icon(screen, idx, self.height, idx == self.active_flag_idx)
+
+
+    def _draw_active_flow_field(self, screen):
+        swarm_map = {
+            self.GROUP_FOOTMEN: self.swarm_footmen,
+            self.GROUP_ARCHERS: self.swarm_archers,
+            self.GROUP_CANNON: self.swarm_cannon,
+        }
+        swarm = swarm_map.get(self.active_group)
+        if not swarm:
+            return
+        swarm._update_flow_field()
+        ff = swarm._flow_field
+        if ff is None or ff.max_distance == 0:
+            return
+        cell = ff.cell_size
+        for y in range(ff.grid_h):
+            for x in range(ff.grid_w):
+                dist = ff.distances[y][x]
+                if dist == ff.INF:
+                    continue
+                intensity = int(127 * (1 - dist / ff.max_distance))
+                if intensity <= 0:
+                    continue
+                rect = pygame.Rect(x * cell, y * cell, cell, cell)
+                color = (intensity, intensity, intensity)
+                screen.fill(color, rect)
 
 
 
