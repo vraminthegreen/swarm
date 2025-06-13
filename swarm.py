@@ -373,11 +373,28 @@ class Swarm(Stage):
     # ------------------------------------------------------------------
     # Movement helpers
     # ------------------------------------------------------------------
+    def _get_obstacle_shapes(self):
+        root = self
+        while getattr(root, "_parent", None) is not None:
+            root = root._parent
+        destructibles = getattr(root, "destructibles", None)
+        shapes = []
+        if destructibles:
+            for tree in getattr(destructibles, "trees", []):
+                shape = tree.getCollisionShape()
+                if shape is not None:
+                    shapes.append(shape)
+        return shapes
+
     def _is_valid_position(self, x, y, others):
         if not (0 <= x < self.width and 0 <= y < self.height):
             return False
         for ox, oy in others:
             if (x - ox) ** 2 + (y - oy) ** 2 < self.min_distance ** 2:
+                return False
+        ant_shape = CollisionShape((x, y), self.min_distance / 2)
+        for shape in self._get_obstacle_shapes():
+            if ant_shape.collidesWith(shape):
                 return False
         return True
 
