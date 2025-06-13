@@ -9,6 +9,7 @@ from swarm import (
     KILL_PROBABILITY,
     ARCHER_KILL_PROBABILITY,
 )
+from destructibles import Destructibles
 from ai_player import AIPlayer
 from human_player import HumanPlayer
 from flag import NormalFlag, FastFlag, StopFlag
@@ -79,9 +80,14 @@ class GameField(Stage):
             num_cannons=self.NUM_CANNONS_BLUE,
         )
 
+        self.destructibles = Destructibles(width, height, num_trees=20, occupied=occupied)
+
         # Register enemies
         self.human_player.enemies.append(self.ai_player)
         self.ai_player.enemies.append(self.human_player)
+        self.human_player.enemies.append(self.destructibles)
+        self.ai_player.enemies.append(self.destructibles)
+        self.destructibles.enemies.extend([self.human_player, self.ai_player])
 
         self.swarm_footmen = self.human_player.swarm_footmen
         self.swarm_archers = self.human_player.swarm_archers
@@ -91,9 +97,11 @@ class GameField(Stage):
         # Organise stage hierarchy
         self.add_stage(self.human_player)
         self.add_stage(self.ai_player)
+        self.add_stage(self.destructibles)
 
         self.human_player.show()
         self.ai_player.show()
+        self.destructibles.show()
 
         self.flag_queues = {
             self.GROUP_FOOTMEN: self.swarm_footmen.queue,
