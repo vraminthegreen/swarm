@@ -94,6 +94,16 @@ class GameField(Stage):
         self.swarm_cannon = self.human_player.swarm_cannon
         self.ai_swarm_cannon = self.ai_player.swarm_cannon
 
+        for swarm in [
+            self.swarm_footmen,
+            self.swarm_archers,
+            self.swarm_cannon,
+            self.ai_player.swarm_footmen,
+            self.ai_player.swarm_archers,
+            self.ai_swarm_cannon,
+        ]:
+            self.destructibles.register_invalidator(swarm.invalidate_flow_field)
+
         # Organise stage hierarchy
         self.add_stage(self.human_player)
         self.add_stage(self.ai_player)

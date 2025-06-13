@@ -239,12 +239,13 @@ class Swarm(Stage):
             self.add_stage(self.particle_arrow)
             self.particle_arrow.show()
 
-        self.queue = OrderQueue()
+        self.queue = OrderQueue(on_change=self._on_queue_change)
         self.add_stage(self.queue)
 
         # Flow field cache for the current target flag
         self._flow_field = None
         self._flow_field_flag = None
+        self._flow_field_dirty = True
 
     def compute_centroid(self):
         """Return the cached centroid of the swarm's units."""
@@ -332,6 +333,30 @@ class Swarm(Stage):
 
     def first_flag(self):
         return self.queue[0] if self.queue else None
+
+    def _on_queue_change(self):
+        self.invalidate_flow_field()
+
+    def invalidate_flow_field(self):
+        self._flow_field_dirty = True
+        self._flow_field = None
+
+    def _update_flow_field(self):
+        flag = self.first_flag()
+        if not flag or flag.pos is None:
+            self._flow_field = None
+            self._flow_field_flag = None
+            self._flow_field_dirty = False
+            return
+        if (
+            self._flow_field is None
+            or self._flow_field_flag is not flag
+            or self._flow_field_dirty
+        ):
+            self._flow_field = FlowField(self.width, self.height)
+            self._flow_field.compute(flag.pos, self._get_obstacle_shapes())
+            self._flow_field_flag = flag
+            self._flow_field_dirty = False
 
     def is_fast_moving(self):
         """Return True if the active flag is a FastFlag."""
@@ -431,8 +456,11 @@ class Swarm(Stage):
         ry = math.sin(angle) * mag
 
         ux = uy = 0.0
+        self._update_flow_field()
         if self._flow_field is not None:
             ux, uy = self._flow_field.get_vector((x, y))
+            ux *= 3
+            uy *= 3
 
         vx = ex + fx + rx + ux
         vy = ey + fy + ry + uy
@@ -490,16 +518,6 @@ class Swarm(Stage):
     def _tick(self, dt):
         flag = self.first_flag()
         flags = [flag] if flag else []
-
-        # Update flow field for the current flag
-        if flag and flag.pos is not None:
-            if self._flow_field_flag is not flag or self._flow_field is None:
-                self._flow_field = FlowField(self.width, self.height)
-                self._flow_field.compute(flag.pos, self._get_obstacle_shapes())
-                self._flow_field_flag = flag
-        else:
-            self._flow_field = None
-            self._flow_field_flag = None
 
         all_ants = self.ants
         speed = dt * 1.5 if isinstance(flag, FastFlag) else dt
