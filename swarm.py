@@ -6,6 +6,7 @@ from stage import Stage
 from order_queue import OrderQueue
 from flag import FastFlag
 from collision_shape import CollisionShape
+from flow_field import FlowField
 from particle_shot import ParticleShot
 from cannon_bullet import CannonBullet
 
@@ -241,6 +242,10 @@ class Swarm(Stage):
         self.queue = OrderQueue()
         self.add_stage(self.queue)
 
+        # Flow field cache for the current target flag
+        self._flow_field = None
+        self._flow_field_flag = None
+
     def compute_centroid(self):
         """Return the cached centroid of the swarm's units."""
         if self._centroid_cache is None:
@@ -425,8 +430,12 @@ class Swarm(Stage):
         rx = math.cos(angle) * mag
         ry = math.sin(angle) * mag
 
-        vx = ex + fx + rx
-        vy = ey + fy + ry
+        ux = uy = 0.0
+        if self._flow_field is not None:
+            ux, uy = self._flow_field.get_vector((x, y))
+
+        vx = ex + fx + rx + ux
+        vy = ey + fy + ry + uy
         vlen = math.hypot(vx, vy)
         if vlen == 0:
             return 0.0, 0.0
@@ -481,6 +490,17 @@ class Swarm(Stage):
     def _tick(self, dt):
         flag = self.first_flag()
         flags = [flag] if flag else []
+
+        # Update flow field for the current flag
+        if flag and flag.pos is not None:
+            if self._flow_field_flag is not flag or self._flow_field is None:
+                self._flow_field = FlowField(self.width, self.height)
+                self._flow_field.compute(flag.pos, self._get_obstacle_shapes())
+                self._flow_field_flag = flag
+        else:
+            self._flow_field = None
+            self._flow_field_flag = None
+
         all_ants = self.ants
         speed = dt * 1.5 if isinstance(flag, FastFlag) else dt
         proposed = self._propose_moves(self.ants, flags, all_ants, speed)
