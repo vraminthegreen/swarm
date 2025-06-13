@@ -9,7 +9,7 @@ import pygame
 class Tree(Stage):
     """Static destructible object with hit points."""
 
-    MAX_HP = 200
+    MAX_HP = 50
 
     def __init__(self, pos, size, owner=None):
         super().__init__()
@@ -28,18 +28,19 @@ class Tree(Stage):
 
     def onCollision(self, stage):
         if self.owner and self.owner.isEnemy(stage):
-            # Register a hit for each collision with an enemy stage
-            self.hp -= 1
-            amplitude = 3
-            for _ in range(3):
-                angle = random.uniform(0, 2 * math.pi)
-                dx = math.cos(angle) * amplitude
-                dy = math.sin(angle) * amplitude
-                self._shake_steps.extend([(dx, dy), (-dx, -dy)])
-            if self.hp <= 0:
-                parent = getattr(self, "_parent", None)
-                if parent is not None:
-                    parent.remove_stage(self)
+            hit_prob = getattr(stage, "kill_probability", 1.0)
+            if random.random() < hit_prob:
+                self.hp -= 1
+                amplitude = 1
+                for _ in range(3):
+                    angle = random.uniform(0, 2 * math.pi)
+                    dx = math.cos(angle) * amplitude
+                    dy = math.sin(angle) * amplitude
+                    self._shake_steps.extend([(dx, dy), (-dx, -dy)])
+                if self.hp <= 0:
+                    parent = getattr(self, "_parent", None)
+                    if parent is not None:
+                        parent.remove_stage(self)
 
     def _tick(self, dt):
         if self._shake_steps:
