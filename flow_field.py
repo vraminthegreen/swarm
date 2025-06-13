@@ -17,6 +17,9 @@ class FlowField:
         self.grid_h = max(1, height // cell_size)
         self._vectors = [[(0.0, 0.0) for _ in range(self.grid_w)] for _ in range(self.grid_h)]
         self.goal = None
+        self.distances = [[0 for _ in range(self.grid_w)] for _ in range(self.grid_h)]
+        self.max_distance = 0
+        self.INF = 10 ** 9
 
     def _cell_center(self, x: int, y: int) -> Tuple[float, float]:
         return (
@@ -39,13 +42,15 @@ class FlowField:
                         blocked[y][x] = True
                         break
         # BFS distance from goal
-        INF = 10 ** 9
+        INF = self.INF
         dist = [[INF for _ in range(self.grid_w)] for _ in range(self.grid_h)]
         gx = min(self.grid_w - 1, max(0, int(goal[0] / self.cell_size)))
         gy = min(self.grid_h - 1, max(0, int(goal[1] / self.cell_size)))
         if blocked[gy][gx]:
             # goal blocked, vectors remain zero
             self._vectors = [[(0.0, 0.0) for _ in range(self.grid_w)] for _ in range(self.grid_h)]
+            self.distances = dist
+            self.max_distance = 0
             return
         dist[gy][gx] = 0
         q = deque([(gx, gy)])
@@ -79,6 +84,11 @@ class FlowField:
                     if length:
                         vectors[y][x] = (vx / length, vy / length)
         self._vectors = vectors
+        self.distances = dist
+        self.max_distance = max(
+            (d for row in dist for d in row if d != INF),
+            default=0,
+        )
 
     def get_vector(self, pos: Tuple[float, float]) -> Tuple[float, float]:
         """Return the flow vector for ``pos``."""
@@ -87,3 +97,11 @@ class FlowField:
         x = min(self.grid_w - 1, max(0, int(pos[0] / self.cell_size)))
         y = min(self.grid_h - 1, max(0, int(pos[1] / self.cell_size)))
         return self._vectors[y][x]
+
+    def get_distance(self, pos: Tuple[float, float]) -> int:
+        """Return the BFS distance for ``pos`` or ``INF`` if unreachable."""
+        if self.goal is None:
+            return self.INF
+        x = min(self.grid_w - 1, max(0, int(pos[0] / self.cell_size)))
+        y = min(self.grid_h - 1, max(0, int(pos[1] / self.cell_size)))
+        return self.distances[y][x]
