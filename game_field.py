@@ -15,6 +15,10 @@ from human_player import HumanPlayer
 from flag import NormalFlag, FastFlag, StopFlag
 
 
+# Set to ``True`` to overlay the cost field of the active flag in grayscale.
+DEBUG_DRAW_COSTS = False
+
+
 class GameField(Stage):
     """Main game field containing player swarms and the AI player."""
 
@@ -171,7 +175,8 @@ class GameField(Stage):
         self.swarm_archers.active = self.active_group == self.GROUP_ARCHERS
         self.swarm_cannon.active = self.active_group == self.GROUP_CANNON
 
-        self._draw_active_flow_field(screen)
+        if DEBUG_DRAW_COSTS:
+            self._draw_active_flow_field(screen)
 
         # Flag icons
         for idx, template in enumerate(self.flag_templates):
@@ -196,10 +201,11 @@ class GameField(Stage):
         cell = ff.cell_size
         for y in range(ff.grid_h):
             for x in range(ff.grid_w):
-                dist = ff.distances[y][x]
-                if dist == ff.INF:
+                cost = ff.costs[y][x]
+                if cost == ff.INF:
                     continue
-                intensity = int(127 * (1 - dist / ff.max_distance))
+                intensity = int(255 * (1 - cost / ff.max_distance))
+                intensity = max(0, min(255, intensity))
                 if intensity <= 0:
                     continue
                 rect = pygame.Rect(x * cell, y * cell, cell, cell)
