@@ -29,6 +29,7 @@ pyenv activate "$ENV_NAME"
 # Install dependencies
 pip install --upgrade pip >/dev/null
 pip install pygame >/dev/null
+pip install numpy >/dev/null
 
 # Run the game
 python main.py
