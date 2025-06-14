@@ -84,7 +84,13 @@ class GameField(Stage):
             num_cannons=self.NUM_CANNONS_BLUE,
         )
 
-        self.destructibles = Destructibles(width, height, num_trees=20, occupied=occupied)
+        self.destructibles = Destructibles(
+            width,
+            height,
+            num_trees=20,
+            occupied=occupied,
+            line_ratio=0.5,
+        )
 
         # Register enemies
         self.human_player.enemies.append(self.ai_player)
