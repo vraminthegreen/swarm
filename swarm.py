@@ -354,7 +354,11 @@ class Swarm(Stage):
             or self._flow_field_dirty
         ):
             self._flow_field = FlowField(self.width, self.height)
-            self._flow_field.compute(flag.pos, self._get_obstacle_shapes())
+            self._flow_field.compute(
+                flag.pos,
+                self._get_obstacle_shapes(),
+                margin=5.0,
+            )
             self._flow_field_flag = flag
             self._flow_field_dirty = False
 
