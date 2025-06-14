@@ -57,8 +57,7 @@ class Tree(Stage):
 class Destructibles(Player):
     """Player controlling stationary destructible trees."""
 
-    def __init__(self, width, height, num_trees=20, occupied=None,
-                 line_ratio=0.0, line_tree_size=15):
+    def __init__(self, width, height, num_trees=20, occupied=None):
         super().__init__()
         self.width = width
         self.height = height
@@ -79,20 +78,7 @@ class Destructibles(Player):
             tree.show()
             occupied.add((int(pos[0]), int(pos[1])))
 
-        if line_ratio > 0.0:
-            step = line_tree_size * 2
-            desired = height * line_ratio
-            n_trees = max(1, int(math.ceil(desired / step)))
-            total = step * (n_trees - 1) + step
-            start_y = (height - total) / 2 + line_tree_size
-            cx = width / 2
-            for i in range(n_trees):
-                pos = (cx, start_y + step * i)
-                tree = Tree(pos, line_tree_size, owner=self)
-                self.trees.append(tree)
-                self.add_stage(tree)
-                tree.show()
-                occupied.add((int(pos[0]), int(pos[1])))
+
 
     def register_invalidator(self, func):
         if callable(func):

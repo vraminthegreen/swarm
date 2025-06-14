@@ -89,7 +89,6 @@ class GameField(Stage):
             height,
             num_trees=20,
             occupied=occupied,
-            line_ratio=0.5,
         )
 
         # Register enemies
