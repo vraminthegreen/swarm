@@ -50,6 +50,7 @@ class FlowField:
     # ------------------------------------------------------------------
     def compute(self, goal: Tuple[float, float], obstacles: Iterable[CollisionShape]):
         """Compute the cost field towards ``goal`` avoiding ``obstacles``."""
+        print("flow_field compute")
 
         self.goal = goal
 

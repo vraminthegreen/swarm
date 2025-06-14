@@ -459,11 +459,11 @@ class Swarm(Stage):
         self._update_flow_field()
         if self._flow_field is not None:
             ux, uy = self._flow_field.get_vector((x, y))
-            ux *= 3
-            uy *= 3
-
-        vx = ex + fx + rx + ux
-        vy = ey + fy + ry + uy
+            vx = ex + rx + ux
+            vy = ey + ry + uy
+        else :
+            vx = ex + fx + rx
+            vy = ey + fy + ry
         vlen = math.hypot(vx, vy)
         if vlen == 0:
             return 0.0, 0.0

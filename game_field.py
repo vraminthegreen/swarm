@@ -16,7 +16,7 @@ from flag import NormalFlag, FastFlag, StopFlag
 
 
 # Set to ``True`` to overlay the cost field of the active flag in grayscale.
-DEBUG_DRAW_COSTS = True
+DEBUG_DRAW_COSTS = False
 
 
 class GameField(Stage):
@@ -192,7 +192,6 @@ class GameField(Stage):
 
 
     def _draw_active_flow_field(self, screen):
-        print("_draw_active_flow_field")
         swarm_map = {
             self.GROUP_FOOTMEN: self.swarm_footmen,
             self.GROUP_ARCHERS: self.swarm_archers,
