@@ -1,5 +1,6 @@
 import math
 import random
+import threading
 import pygame
 
 from stage import Stage
@@ -246,6 +247,8 @@ class Swarm(Stage):
         self._flow_field = None
         self._flow_field_flag = None
         self._flow_field_dirty = True
+        self._flow_field_thread = None
+        self._flow_field_lock = threading.Lock()
 
     def compute_centroid(self):
         """Return the cached centroid of the swarm's units."""
@@ -353,14 +356,23 @@ class Swarm(Stage):
             or self._flow_field_flag is not flag
             or self._flow_field_dirty
         ):
-            self._flow_field = FlowField(self.width, self.height)
-            self._flow_field.compute(
-                flag.pos,
-                self._get_obstacle_shapes(),
-                margin=5.0,
-            )
-            self._flow_field_flag = flag
-            self._flow_field_dirty = False
+            if not (self._flow_field_thread and self._flow_field_thread.is_alive()):
+                self._flow_field_flag = flag
+                obstacles = self._get_obstacle_shapes()
+                self._flow_field_thread = threading.Thread(
+                    target=self._run_flow_field_compute,
+                    args=(flag, obstacles),
+                    daemon=True,
+                )
+                self._flow_field_thread.start()
+
+    def _run_flow_field_compute(self, flag, obstacles):
+        ff = FlowField(self.width, self.height)
+        ff.compute(flag.pos, obstacles, margin=5.0)
+        with self._flow_field_lock:
+            if self._flow_field_flag is flag:
+                self._flow_field = ff
+                self._flow_field_dirty = False
 
     def is_fast_moving(self):
         """Return True if the active flag is a FastFlag."""
