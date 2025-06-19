@@ -3,6 +3,8 @@
 from collections import deque
 from typing import Iterable, Tuple
 import math
+import time
+from datetime import datetime
 
 from collision_shape import CollisionShape
 
@@ -63,13 +65,18 @@ class FlowField:
         ``margin`` expands the radius of each obstacle by the given amount
         during computation.
         """
-        print("flow_field compute")
+        now = datetime.now()
+        print(now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + ' field_flow compute - start')
 
         self.goal = goal
 
         blocked = [[False for _ in range(self.grid_w)] for _ in range(self.grid_h)]
         half = self.cell_size / 2
+        counter = 0
         for y in range(self.grid_h):
+            if counter % 50 == 0 :
+                time.sleep(0.01)
+            counter += 1
             for x in range(self.grid_w):
                 center = self._cell_center(x, y)
                 cell_shape = CollisionShape(center, half)
@@ -78,6 +85,9 @@ class FlowField:
                     if cell_shape.collidesWith(inflated):
                         blocked[y][x] = True
                         break
+
+        now = datetime.now()
+        print(now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + ' field_flow compute - half way (counter: {})'.format(counter))
 
         costs = [[self.INF for _ in range(self.grid_w)] for _ in range(self.grid_h)]
         gx = min(self.grid_w - 1, max(0, int(goal[0] / self.cell_size)))
@@ -95,9 +105,15 @@ class FlowField:
         costs[gy][gx] = 0.0
         q = deque([(gx, gy)])
 
+        counter = 0
+
         while q:
             cx, cy = q.popleft()
             base = costs[cy][cx]
+            if counter % 30000 == 0 :
+                #pass
+                time.sleep(0.01)
+            counter += 1
             for dx, dy in self.DIRECTIONS:
                 nx, ny = cx + dx, cy + dy
                 if 0 <= nx < self.grid_w and 0 <= ny < self.grid_h and not blocked[ny][nx]:
@@ -114,6 +130,9 @@ class FlowField:
 
         finite = [v for row in costs for v in row if math.isfinite(v)]
         self.max_distance = max(finite) if finite else 0.0
+        now = datetime.now()
+        print(now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3] + ' field_flow compute - done (counter: {})'.format(counter))
+
 
     def get_vector(self, pos: Tuple[float, float]) -> Tuple[float, float]:
         """Return the flow vector for ``pos``."""

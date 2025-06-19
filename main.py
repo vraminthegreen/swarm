@@ -2,6 +2,7 @@
 
 import pygame
 import sys
+import time
 
 from game_field import GameField
 
@@ -27,6 +28,7 @@ def main():
         field.draw(screen)
         pygame.display.flip()
         clock.tick(20)
+        time.sleep(0.01)
 
     pygame.quit()
     sys.exit()
